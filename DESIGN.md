@@ -24,7 +24,7 @@ Firma visual: el fondo de **colinas y cielo pixel-art propio**. En claro es medi
 Reglas: máximo dos tonos por barra de título (sin degradados decorativos más allá de ese par); la tinta roja solo para garabatos y acentos; el texto de cuerpo siempre sobre `--window`, nunca directamente sobre el fondo. Verificar contraste ≥ 4.5:1 (texto) y ≥ 3:1 (componentes) en ambos modos.
 
 ## Tipografía
-- **Pixelify Sans** — títulos de ventana y etiquetas de interfaz (tamaño ≥ 14px).
+- **Pixelify Sans** — títulos de ventana y etiquetas de interfaz (tamaño ≥ 15px). **Solo peso 400**: en 500/700 se rellenan los huecos de las letras y "Contacto" se lee "Oontacto" (comprobado visualmente). No usar `font-weight` > 400 con `--font-ui`; para énfasis usar tamaño, subrayado o color.
 - **Atkinson Hyperlegible Next** — cuerpo y párrafos largos (16–18px, interlineado 1.6).
 - **Permanent Marker** — solo garabatos y 1–2 palabras de acento por pantalla. Nunca para párrafos.
 - Autoalojadas (woff2, subset latino), `font-display: swap`, precarga de las dos primeras.

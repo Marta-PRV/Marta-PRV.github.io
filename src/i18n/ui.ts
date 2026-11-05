@@ -1,0 +1,54 @@
+/**
+ * Textos de la interfaz en cada idioma. Todo texto visible que no venga de un
+ * MDX sale de aquí: así traducir (o corregir) es tocar un solo archivo.
+ */
+export const languages = { es: 'Español', en: 'English' } as const;
+export type Lang = keyof typeof languages;
+export const defaultLang: Lang = 'es';
+
+export const ui = {
+  es: {
+    'site.title': 'Marta Prieto · Portfolio',
+    'site.description':
+      'Portfolio de Marta Prieto, ingeniera de software: desarrollo web, inteligencia artificial y videojuegos.',
+    'nav.label': 'Navegación principal',
+    'nav.start': 'Inicio',
+    'nav.menu': 'Abrir menú de navegación',
+    'nav.projects': 'Proyectos',
+    'nav.about': 'Sobre mí',
+    'nav.contact': 'Contacto',
+    'nav.how': 'Cómo está hecho',
+    'nav.skip': 'Saltar al contenido',
+    'theme.toLight': 'Cambiar a modo claro',
+    'theme.toDark': 'Cambiar a modo oscuro',
+    'lang.switch': 'Switch to English',
+    'lang.short': 'EN',
+    'video.play': 'Reproducir vídeo',
+    'video.track': 'Pista 01',
+    'photo.alt': 'Retrato de Marta Prieto',
+    'window.close': 'Cerrar',
+  },
+  en: {
+    'site.title': 'Marta Prieto · Portfolio',
+    'site.description':
+      'Portfolio of Marta Prieto, software engineer: web development, artificial intelligence and video games.',
+    'nav.label': 'Main navigation',
+    'nav.start': 'Start',
+    'nav.menu': 'Open navigation menu',
+    'nav.projects': 'Projects',
+    'nav.about': 'About me',
+    'nav.contact': 'Contact',
+    'nav.how': 'How it is made',
+    'nav.skip': 'Skip to content',
+    'theme.toLight': 'Switch to light mode',
+    'theme.toDark': 'Switch to dark mode',
+    'lang.switch': 'Cambiar a español',
+    'lang.short': 'ES',
+    'video.play': 'Play video',
+    'video.track': 'Track 01',
+    'photo.alt': 'Portrait of Marta Prieto',
+    'window.close': 'Close',
+  },
+} as const satisfies Record<Lang, Record<string, string>>;
+
+export type UiKey = keyof (typeof ui)['es'];

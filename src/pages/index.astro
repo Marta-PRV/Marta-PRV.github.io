@@ -1,24 +1,66 @@
 ---
-// PÁGINA TEMPORAL (paso 2): solo comprueba que la colección de proyectos
-// se carga y valida. Se sustituye por el diseño real en el paso 3-4.
-import { getCollection } from 'astro:content';
-
-const projects = (await getCollection('projects', ({ id, data }) => id.startsWith('es/') && !data.draft))
-  .sort((a, b) => a.data.order - b.data.order);
+// PÁGINA TEMPORAL (paso 3): muestrario de componentes para revisar el sistema
+// de diseño. Se sustituye por la portada real en el paso 4.
+import Base from '../layouts/Base.astro';
+import Window from '../components/Window.astro';
+import NotepadAbout from '../components/NotepadAbout.astro';
+import PaintPhoto from '../components/PaintPhoto.astro';
+import StickyNote from '../components/StickyNote.astro';
+import CdPlayer from '../components/CdPlayer.astro';
+import Scribble from '../components/Scribble.astro';
+import marta from '../assets/marta.jpg';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Marta Prieto · Portfolio</title>
-  </head>
-  <body>
-    <h1>Marta Prieto</h1>
-    <ul>
-      {projects.map((p) => (
-        <li>{p.data.title} — {p.data.tech.join(', ')}</li>
-      ))}
-    </ul>
-  </body>
-</html>
+<Base lang="es">
+  <div class="page showcase">
+    <Window title="Proyectos" id="proyectos" icon="folder" level="h1">
+      <div class="prose">
+        <p>Ventana de ejemplo con texto de lectura cómodo. Los enlaces se ven <a href="#proyectos">así</a>.</p>
+        <p><a class="btn" href="#proyectos">Ver proyecto</a></p>
+      </div>
+    </Window>
+
+    <NotepadAbout title="sobre-mi.txt — Bloc de notas" id="sobre-mi">
+      <p>Soy Marta, ingeniera de software. Me gusta el frontend, la IA y los videojuegos.</p>
+    </NotepadAbout>
+
+    <PaintPhoto title="marta.bmp — Dibujo" id="foto" image={marta} alt="Retrato de Marta Prieto" />
+
+    <div class="note-wrap">
+      <StickyNote>
+        <ul>
+          <li>Ingeniería de Software</li>
+          <li>Frontend · IA · Juegos</li>
+        </ul>
+      </StickyNote>
+      <Scribble kind="arrow" width={90} class="arrow" />
+    </div>
+
+    <CdPlayer videoId="VqEWWKMhXMA" title="Zombie Survival FPS" />
+  </div>
+</Base>
+
+<style>
+  .showcase {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  .note-wrap {
+    position: relative;
+    max-width: 18rem;
+  }
+
+  .arrow {
+    position: absolute;
+    inset-inline-end: -3rem;
+    inset-block-end: -1.5rem;
+  }
+
+  @media (min-width: 52rem) {
+    .showcase {
+      grid-template-columns: repeat(2, 1fr);
+      align-items: start;
+    }
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+// Pinta un icono pixel-art de icons.ts como SVG. Une los píxeles contiguos de
+// cada fila en un solo rectángulo para que el SVG pese poco.
+import { icons, palette, type IconName } from './icons';
+
+interface Props {
+  name: IconName;
+  /** Tamaño en px. Usa múltiplos de 16 (16, 32, 48) para que los píxeles salgan nítidos. */
+  size?: number;
+  /** Texto para lectores de pantalla. Si no se pasa, el icono se oculta (decorativo). */
+  label?: string;
+}
+
+const { name, size = 16, label } = Astro.props;
+
+const rects: { x: number; y: number; w: number; color: string }[] = [];
+icons[name].forEach((row, y) => {
+  let x = 0;
+  while (x < row.length) {
+    const ch = row[x];
+    if (ch === '.') {
+      x++;
+      continue;
+    }
+    let end = x;
+    while (end + 1 < row.length && row[end + 1] === ch) end++;
+    rects.push({ x, y, w: end - x + 1, color: ch === 'k' ? 'currentColor' : palette[ch] });
+    x = end + 1;
+  }
+});
+---
+
+<svg
+  class="pixel-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 16 16"
+  shape-rendering="crispEdges"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  focusable="false"
+>
+  {rects.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.color} />)}
+</svg>
+
+<style>
+  .pixel-icon {
+    flex: none;
+    image-rendering: pixelated;
+  }
+</style>

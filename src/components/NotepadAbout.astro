@@ -1,0 +1,56 @@
+---
+// "Sobre mí" dentro de un Bloc de notas. La barra de menús es decorativa.
+// Se llama "Bloc de notas" / "Notepad" en sentido genérico: no usamos nombres de
+// programas ni marcas de Microsoft en la interfaz.
+import Window from './Window.astro';
+import { getLangFromUrl } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  id: string;
+  class?: string;
+}
+
+const { title, id, class: className } = Astro.props;
+const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Formato', 'Ver', 'Ayuda'] : ['File', 'Edit', 'Format', 'View', 'Help'];
+---
+
+<Window title={title} id={id} icon="notepad" flush class={className}>
+  <div slot="menu" class="menu" aria-hidden="true">
+    {menu.map((item) => <span>{item}</span>)}
+  </div>
+  <div class="paper">
+    <div class="prose">
+      <slot />
+    </div>
+  </div>
+</Window>
+
+<style>
+  .menu {
+    display: flex;
+    gap: var(--s-4);
+    padding: var(--s-1) var(--s-3);
+    font-size: var(--text-sm);
+    color: var(--window-text);
+    background: var(--window);
+    border-bottom: 1px solid var(--window-line);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .paper {
+    padding: var(--s-5);
+    color: var(--paper-text);
+    background: var(--paper);
+    border: 1px solid var(--window-line);
+    box-shadow: inset 1px 1px 0 var(--button-lo);
+    margin: var(--s-1);
+  }
+
+  @media (min-width: 40rem) {
+    .paper {
+      padding: var(--s-6);
+    }
+  }
+</style>

@@ -1,0 +1,294 @@
+---
+// Barra de tareas fija abajo = navegación del sitio. El botón Inicio abre un
+// menú con la API nativa `popover` (sin librerías: cierra con Esc, clic fuera
+// y gestiona el foco por nosotros). Las únicas piezas con JS son el cambio de
+// tema y el reloj decorativo.
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { alternatePath, localePath, sectionSlug, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const home = localePath(lang);
+const howHref = localePath(lang, sectionSlug(lang, 'como-esta-hecho'));
+const onHow = Astro.url.pathname === howHref;
+
+const sections = [
+  { href: `${home}#proyectos`, label: t('nav.projects'), icon: 'folder' as const },
+  { href: `${home}#sobre-mi`, label: t('nav.about'), icon: 'notepad' as const },
+  { href: `${home}#contacto`, label: t('nav.contact'), icon: 'mail' as const },
+];
+---
+
+<nav class="taskbar" aria-label={t('nav.label')}>
+  <button class="start" type="button" popovertarget="start-menu" aria-label={t('nav.menu')}>
+    <Icon name="start" size={24} />
+    <span class="start__text">{t('nav.start')}</span>
+  </button>
+
+  <div id="start-menu" class="start-menu" popover>
+    <ul>
+      {sections.map((s) => (
+        <li><a href={s.href}><Icon name={s.icon} size={32} />{s.label}</a></li>
+      ))}
+      <li class="start-menu__sep">
+        <a href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="cd" size={32} />{t('nav.how')}</a>
+      </li>
+    </ul>
+  </div>
+
+  <ul class="tasks">
+    {sections.map((s) => (
+      <li><a class="task" href={s.href}><Icon name={s.icon} size={16} />{s.label}</a></li>
+    ))}
+    <li>
+      <a class="task" href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="cd" size={16} />{t('nav.how')}</a>
+    </li>
+  </ul>
+
+  <div class="tray">
+    <a class="tray__btn" href={alternatePath(Astro.url, other)} hreflang={other} lang={other} aria-label={t('lang.switch')}>
+      <Icon name="globe" size={16} />{t('lang.short')}
+    </a>
+    <button
+      class="tray__btn theme-toggle"
+      type="button"
+      data-to-light={t('theme.toLight')}
+      data-to-dark={t('theme.toDark')}
+      aria-label={t('theme.toDark')}
+    >
+      <span class="theme-toggle__moon"><Icon name="moon" size={16} /></span>
+      <span class="theme-toggle__sun"><Icon name="sun" size={16} /></span>
+    </button>
+    <time class="clock" aria-hidden="true" data-lang={lang}></time>
+  </div>
+</nav>
+
+<style>
+  .taskbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 50;
+    display: flex;
+    align-items: stretch;
+    gap: var(--s-2);
+    height: var(--taskbar-h);
+    color: var(--taskbar-text);
+    background: linear-gradient(to bottom, var(--taskbar-b), var(--taskbar-a));
+    border-top: 2px solid color-mix(in srgb, var(--taskbar-b) 70%, #fff);
+  }
+
+  /* Botón Inicio: símbolo propio (sol sobre colinas), no la bandera de Windows */
+  .start {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 0 var(--s-4) 0 var(--s-3);
+    font-family: var(--font-ui);
+    font-size: 1.125rem;
+    font-style: italic;
+    color: #fff;
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
+    background: linear-gradient(to bottom, var(--start-b), var(--start-a));
+    border: 0;
+    border-radius: 0 14px 14px 0;
+    box-shadow: inset -1px 0 0 rgb(0 0 0 / 0.25);
+    cursor: pointer;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+
+  .start:active {
+    transform: translateY(1px);
+  }
+
+  .start-menu {
+    position: fixed;
+    inset: auto auto var(--taskbar-h) 0;
+    margin: 0;
+    padding: var(--s-1);
+    min-width: 16rem;
+    max-width: calc(100vw - 1rem);
+    color: var(--window-text);
+    background: var(--window);
+    border: 3px solid var(--titlebar-a);
+    border-bottom: 0;
+    border-radius: var(--radius-window) var(--radius-window) 0 0;
+    box-shadow: var(--shadow-window);
+  }
+
+  .start-menu ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .start-menu a {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 3rem;
+    padding: var(--s-1) var(--s-4) var(--s-1) var(--s-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-lg);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .start-menu a:hover,
+  .start-menu a:focus-visible {
+    background: var(--titlebar-a);
+    color: #fff;
+  }
+
+  .start-menu a[aria-current='page'] {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .start-menu__sep {
+    margin-block-start: var(--s-1);
+    padding-block-start: var(--s-1);
+    border-top: 1px solid var(--window-line);
+  }
+
+  /* Botones de tarea: solo en pantallas anchas (en móvil todo vive en Inicio) */
+  .tasks {
+    display: none;
+    flex: 1;
+    align-items: center;
+    gap: var(--s-1);
+    margin: 0;
+    padding: 0 var(--s-1);
+    list-style: none;
+    min-width: 0;
+  }
+
+  .task {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: 2.5rem;
+    padding: 0 var(--s-3);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: #fff;
+    text-decoration: none;
+    white-space: nowrap;
+    background: color-mix(in srgb, #fff 14%, transparent);
+    border: 1px solid color-mix(in srgb, #fff 35%, transparent);
+    border-radius: 3px;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+
+  .task:hover {
+    background: color-mix(in srgb, #fff 26%, transparent);
+  }
+
+  .task:active {
+    transform: translateY(1px);
+  }
+
+  .task[aria-current='page'] {
+    background: rgb(0 0 0 / 0.25);
+    box-shadow: inset 1px 1px 2px rgb(0 0 0 / 0.4);
+  }
+
+  .tray {
+    display: flex;
+    align-items: center;
+    gap: var(--s-1);
+    margin-inline-start: auto;
+    padding: 0 var(--s-2);
+    background: color-mix(in srgb, #000 22%, var(--taskbar-a));
+    border-inline-start: 1px solid color-mix(in srgb, #fff 30%, transparent);
+  }
+
+  .tray__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-1);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0 var(--s-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: #fff;
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .tray__btn:hover {
+    background: color-mix(in srgb, #fff 20%, transparent);
+  }
+
+  .clock {
+    display: none;
+    padding-inline: var(--s-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Un solo icono de tema visible: la luna en claro (para ir a oscuro), el sol en oscuro */
+  .theme-toggle__sun,
+  :global(:root[data-theme='dark']) .theme-toggle__moon {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .theme-toggle__sun {
+    display: block;
+  }
+
+  @media (min-width: 52rem) {
+    .tasks {
+      display: flex;
+    }
+    .clock {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  const root = document.documentElement;
+  const toggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
+
+  function syncLabel() {
+    if (!toggle) return;
+    const dark = root.dataset.theme === 'dark';
+    toggle.setAttribute('aria-label', (dark ? toggle.dataset.toLight : toggle.dataset.toDark) ?? '');
+  }
+
+  toggle?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {
+      /* modo privado: el tema solo dura esta visita */
+    }
+    syncLabel();
+  });
+  syncLabel();
+
+  // El menú Inicio se cierra al elegir una opción (los enlaces #ancla no recargan la página).
+  const menu = document.getElementById('start-menu');
+  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.hidePopover()));
+
+  // Reloj decorativo (se oculta a lectores de pantalla)
+  const clock = document.querySelector<HTMLTimeElement>('.clock');
+  function tick() {
+    if (clock) clock.textContent = new Date().toLocaleTimeString(clock.dataset.lang, { hour: '2-digit', minute: '2-digit' });
+  }
+  tick();
+  setInterval(tick, 30_000);
+</script>

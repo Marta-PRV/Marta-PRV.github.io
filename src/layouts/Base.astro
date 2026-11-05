@@ -1,0 +1,65 @@
+---
+// Plantilla base de todas las páginas: <head>, tema, fuentes, fondo, barra de
+// tareas y el hueco <main>. El SEO completo (Open Graph, JSON-LD) llega en el paso 6.
+// Pixelify Sans SOLO en peso 400: en 500/700 se rellenan los huecos de las letras
+// ("Contacto" se lee "Oontacto"). Nunca usar font-weight > 400 con --font-ui.
+import '@fontsource/pixelify-sans/latin-400.css';
+import '@fontsource/atkinson-hyperlegible-next/latin-400.css';
+import '@fontsource/atkinson-hyperlegible-next/latin-400-italic.css';
+import '@fontsource/atkinson-hyperlegible-next/latin-700.css';
+import '@fontsource/permanent-marker/latin-400.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+import Hills from '../components/Hills.astro';
+import Taskbar from '../components/Taskbar.astro';
+import type { Lang } from '../i18n/ui';
+import { alternatePath, useTranslations } from '../i18n/utils';
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const title = Astro.props.title ?? t('site.title');
+const description = Astro.props.description ?? t('site.description');
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const alternate = new URL(alternatePath(Astro.url, other), Astro.site);
+---
+
+<!doctype html>
+<html lang={lang} data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang={lang} href={canonical} />
+    <link rel="alternate" hreflang={other} href={alternate} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <!-- Pone el tema (claro/oscuro) ANTES de pintar, para evitar el parpadeo. -->
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">{t('nav.skip')}</a>
+    <Hills />
+    <main id="contenido">
+      <slot />
+    </main>
+    <Taskbar lang={lang} />
+  </body>
+</html>

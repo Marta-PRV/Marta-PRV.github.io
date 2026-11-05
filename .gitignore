@@ -32,3 +32,6 @@ playwright-report/
 
 # Windows
 Thumbs.db
+
+# Capturas de revisión visual (Playwright MCP)
+.playwright-mcp/

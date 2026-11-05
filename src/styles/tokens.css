@@ -1,0 +1,91 @@
+/*
+ * Tokens de diseño — ÚNICA fuente de colores, tipografía, espacios y movimiento.
+ * Sistema "Campiña XP" (ver DESIGN.md).
+ *
+ * Truco: `light-dark(claro, oscuro)` elige el valor según `color-scheme`.
+ * El tema lo decide el atributo data-theme de <html> (lo pone un script en <head>).
+ */
+:root {
+  color-scheme: light;
+
+  /* Paisaje: cielo en 4 bandas (efecto píxel, sin degradado suave) y colinas */
+  --sky-1: light-dark(#6fb0ea, #0d1030);
+  --sky-2: light-dark(#8ec3f0, #141846);
+  --sky-3: light-dark(#a9d3f5, #1f2458);
+  --sky-4: light-dark(#c4e1f8, #2e3270);
+  --cloud: light-dark(#ffffff, #3a3f80);
+  --star: light-dark(transparent, #ffe9a8);
+  --hill-back: light-dark(#7fbf55, #1b3a46);
+  --hill-front: light-dark(#5fa83a, #16302f);
+  --hill-light: light-dark(#8fd061, #24504a);
+
+  /* Ventanas */
+  --window: light-dark(#ece9d8, #2a2d3e);
+  --window-edge: light-dark(#0b3a9a, #7f8fe6);
+  --window-text: light-dark(#1b1b1b, #ece9f5);
+  --window-muted: light-dark(#4a4a4a, #bfbfd6);
+  --window-line: light-dark(#aca899, #4d5170);
+  --titlebar-a: light-dark(#1f5fd0, #3a4bb0);
+  --titlebar-b: light-dark(#3f8cf0, #4f63d0);
+  --titlebar-text: #ffffff;
+  --paper: light-dark(#ffffff, #161826);
+  --paper-text: light-dark(#1b1b1b, #e8e6f2);
+
+  /* Notas y garabatos */
+  --note: light-dark(#fbe08a, #d9b85a);
+  --note-text: #2a2412;
+  --ink: light-dark(#a8321e, #ff8a70);
+
+  /* Interacción */
+  --link: light-dark(#0b3fa8, #9db8ff);
+  --focus: light-dark(#c2410c, #ffd166);
+  --button: light-dark(#f4f2e6, #3a3e55);
+  --button-edge: light-dark(#7a7868, #7f84a8);
+  --button-hi: light-dark(#ffffff, #565b7c);
+  --button-lo: light-dark(#aca899, #1d1f2e);
+  --accent-ok: light-dark(#2f7d32, #7ddc80);
+
+  /* Barra de tareas */
+  --taskbar-a: light-dark(#245edb, #2a3580);
+  --taskbar-b: light-dark(#3a7bf0, #3a47a0);
+  --start-a: light-dark(#3c9a2c, #2f7a5a);
+  --start-b: light-dark(#56b83e, #3f9a72);
+  --taskbar-text: #ffffff;
+  --taskbar-h: 3rem;
+
+  /* Tipografía */
+  --font-ui: 'Pixelify Sans', ui-monospace, Consolas, monospace;
+  --font-body: 'Atkinson Hyperlegible Next', system-ui, 'Segoe UI', sans-serif;
+  --font-marker: 'Permanent Marker', 'Comic Sans MS', cursive;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: clamp(2rem, 1.2rem + 3.5vw, 3.25rem);
+  --measure: 66ch;
+
+  /* Espacios (escala de 4px) */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4.5rem;
+  --gutter: 1rem;
+  --page-max: 68rem;
+
+  /* Forma y sombra (una sola elevación para las ventanas) */
+  --radius-window: 8px;
+  --shadow-window: 0 6px 18px rgb(0 0 0 / 0.28), 0 1px 2px rgb(0 0 0 / 0.3);
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast: 100ms;
+  --dur-window: 160ms;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}

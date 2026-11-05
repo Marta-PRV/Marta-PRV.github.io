@@ -1,0 +1,125 @@
+---
+// Ventana retro. Es un <article> o <section> normal con su título como
+// encabezado (así los lectores de pantalla navegan por ella). Los tres botones
+// de la barra son decoración pura: no hacen nada y se ocultan a la accesibilidad.
+import Icon from './Icon.astro';
+import type { IconName } from './icons';
+
+interface Props {
+  title: string;
+  /** Id del encabezado (para aria-labelledby y para enlaces tipo #proyectos). */
+  id: string;
+  icon?: IconName;
+  /** Nivel del encabezado del título: h2 para ventanas de sección, h3 si va dentro de otra. */
+  level?: 'h1' | 'h2' | 'h3';
+  as?: 'article' | 'section';
+  /** Quita el relleno del cuerpo (útil para vídeo o imagen a sangre). */
+  flush?: boolean;
+  class?: string;
+}
+
+const { title, id, icon = 'folder', level = 'h2', as: Tag = 'section', flush = false, class: className } = Astro.props;
+const Heading = level;
+---
+
+<Tag class:list={['window', className]} aria-labelledby={id}>
+  <div class="window__bar">
+    <Icon name={icon} size={16} />
+    <Heading class="window__title" id={id}>{title}</Heading>
+    <span class="window__controls" aria-hidden="true">
+      <span class="ctl"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="5" width="5" height="2" fill="#fff" /></svg></span>
+      <span class="ctl"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1h6v6H1z" fill="none" stroke="#fff" stroke-width="1.5" /></svg></span>
+      <span class="ctl ctl--close"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1l6 6M7 1L1 7" stroke="#fff" stroke-width="1.6" /></svg></span>
+    </span>
+  </div>
+  <slot name="menu" />
+  <div class:list={['window__body', { 'window__body--flush': flush }]}>
+    <slot />
+  </div>
+</Tag>
+
+<style>
+  .window {
+    /* Marco azul de 3px a los lados y abajo, como las ventanas de la época */
+    background: var(--titlebar-a);
+    padding: 0 3px 3px;
+    border-radius: var(--radius-window) var(--radius-window) 3px 3px;
+    box-shadow: var(--shadow-window);
+    min-width: 0;
+  }
+
+  .window__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: 2.25rem;
+    padding: 0 var(--s-1) 0 var(--s-2);
+    color: var(--titlebar-text);
+    background: linear-gradient(to bottom, var(--titlebar-b), var(--titlebar-a));
+    border-radius: calc(var(--radius-window) - 1px) calc(var(--radius-window) - 1px) 0 0;
+  }
+
+  .window__title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-ui);
+    font-size: 1.0625rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.4);
+  }
+
+  .window__controls {
+    display: flex;
+    gap: 3px;
+  }
+
+  .ctl {
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    background: var(--titlebar-b);
+    border: 1px solid #fff;
+    border-radius: 3px;
+  }
+
+  .ctl svg {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  .ctl--close {
+    background: #d9402a;
+  }
+
+  .window__body {
+    padding: var(--s-5);
+    background: var(--window);
+    color: var(--window-text);
+  }
+
+  .window__body--flush {
+    padding: 0;
+  }
+
+  /* En pantallas estrechas solo queda el botón de cerrar: más sitio para el título */
+  @media (max-width: 30rem) {
+    .ctl:not(.ctl--close) {
+      display: none;
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .window__body {
+      padding: var(--s-6);
+    }
+    .window__body--flush {
+      padding: 0;
+    }
+  }
+</style>
