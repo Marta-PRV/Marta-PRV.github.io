@@ -23,7 +23,7 @@ const bars = Array.from({ length: 12 }, (_, i) => ({
 }));
 ---
 
-<Window title={title} id="escuchando" icon="cd" index={index} class="nowplaying">
+<Window title={title} id="escuchando" icon="cd" index={index} extra class="nowplaying">
   <div class="lcd">
     <p class="track"><span>{nowPlaying.title[lang]}</span></p>
     <span class="time" aria-hidden="true">{nowPlaying.time}</span>

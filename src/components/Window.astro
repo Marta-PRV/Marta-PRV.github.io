@@ -27,6 +27,8 @@ interface Props {
   draggable?: boolean;
   /** Ventana de página que se abre encima de todo: role="dialog" modal (el resto queda inerte). */
   dialog?: boolean;
+  /** Ventana decorativa (música, avisos): empieza cerrada si no hay sitio libre en el escritorio. */
+  extra?: boolean;
   /** Posición en la cascada de apertura (cada paso añade ~70 ms de retraso). */
   index?: number;
   class?: string;
@@ -42,6 +44,7 @@ const {
   closeHref,
   draggable = true,
   dialog = false,
+  extra = false,
   index = 0,
   class: className,
 } = Astro.props;
@@ -58,6 +61,7 @@ const t = useTranslations(getLangFromUrl(Astro.url));
   role={dialog ? 'dialog' : undefined}
   aria-modal={dialog ? 'true' : undefined}
   data-draggable={draggable ? '' : undefined}
+  data-extra={extra ? '' : undefined}
   style={`--i:${index}`}
 >
   <div class="window__bar" data-drag>
@@ -111,6 +115,11 @@ const t = useTranslations(getLangFromUrl(Astro.url));
   /* El gestor marca las ventanas que no están delante: barra gris */
   .window[data-inactive] .window__bar {
     background: linear-gradient(to right, var(--titlebar-off-a), var(--titlebar-off-b));
+  }
+
+  /* Destello breve de la barra de título cuando algo pide atención a una ventana que ya estaba delante */
+  .window[data-flash] .window__bar {
+    animation: bar-flash 420ms steps(2, end) 2;
   }
 
   .window__title {
@@ -202,11 +211,24 @@ const t = useTranslations(getLangFromUrl(Astro.url));
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .window[data-flash] .window__bar {
+      animation: none;
+      filter: brightness(1.5);
+    }
+  }
+
   /* Apertura en cascada: una sola vez al cargar. Sin movimiento si el usuario lo pide. */
   @media (prefers-reduced-motion: no-preference) {
     .window {
       animation: window-open var(--dur-window) var(--ease-out) both;
       animation-delay: calc(var(--i, 0) * 70ms);
+    }
+  }
+
+  @keyframes bar-flash {
+    50% {
+      filter: brightness(1.9);
     }
   }
 

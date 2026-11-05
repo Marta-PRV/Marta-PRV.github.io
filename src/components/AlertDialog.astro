@@ -16,7 +16,7 @@ interface Props {
 const { alert, lang, index = 0 } = Astro.props;
 ---
 
-<Window title={alert.title[lang]} id={alert.id} icon={alert.icon} index={index} class="alert">
+<Window title={alert.title[lang]} id={alert.id} icon={alert.icon} index={index} extra class="alert">
   <div class="row">
     <span class="alert__icon"><Icon name={alert.icon} size={32} /></span>
     <p>{alert.text[lang]}</p>

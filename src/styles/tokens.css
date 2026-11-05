@@ -101,6 +101,8 @@
   --w-tech: 26rem;
   --w-contact: 19rem;
   --w-player: 13.5rem;
+  --w-redes: 14.5rem;
+  --tech-h: 18.5rem; /* alto de la ventana de tecnologías (3 filas); si crece, súbelo */
   --w-alert: 14rem;
   --w-project: 60rem;
 

@@ -1,8 +1,9 @@
 ---
-// Página "Cómo está hecho": explica las decisiones de diseño y técnicas reales
-// de este portfolio. Cada frase describe algo que ya existe en el código.
+// Página "Cómo está hecho": explica las decisiones de diseño y técnicas reales de este
+// portfolio. El texto vive en src/data/howItsMade.ts (cada frase debe ser cierta).
 import NotepadAbout from './NotepadAbout.astro';
 import PageDesk from './PageDesk.astro';
+import { howItsMade } from '../data/howItsMade';
 import type { Lang } from '../i18n/ui';
 import { localePath, useTranslations } from '../i18n/utils';
 
@@ -12,96 +13,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
-
-interface Section {
-  heading: string;
-  items: string[];
-}
-
-const content: Record<Lang, { title: string; heading: string; description: string; intro: string; sections: Section[] }> = {
-  es: {
-    title: 'como_esta_hecho.txt — Bloc de notas',
-    heading: 'Cómo está hecho',
-    description:
-      'Las decisiones de diseño y técnicas detrás de este portfolio: Astro, MDX, diseño retro propio, accesibilidad y rendimiento.',
-    intro:
-      'Este portfolio parece un escritorio de los 2000, pero es una web normal con scroll: sin ventanas arrastrables, para que llegar a un proyecto lleve un solo clic. Estas son las decisiones que hay detrás.',
-    sections: [
-      {
-        heading: 'Diseño',
-        items: [
-          'Retro propio, no copiado. Inspirado en el escritorio de Windows XP, pero sin logos, tipografías ni fondos de Microsoft. El paisaje de colinas está hecho con rectángulos SVG y los iconos son rejillas de 16×16 píxeles dibujadas a mano en texto.',
-          'Modo claro y oscuro. Cada color se define una sola vez con light-dark(): mediodía en claro, anochecer en oscuro, con el mismo paisaje.',
-          'Tipografía pensada para leer. Pixelify Sans solo en peso normal (en negrita, «Contacto» se leía «Oontacto»), Atkinson Hyperlegible Next para los textos y Permanent Marker solo para detalles.',
-          'Etiquetas legibles sobre cualquier fondo. Los nombres de los iconos van sobre una pastilla azul marino en lugar de flotar sobre el paisaje.',
-          'Movimiento con medida. Las ventanas se abren en cascada en unos 300 ms y los iconos dan un pequeño salto con el ratón. No hay pantalla de arranque que haga esperar, y todo se apaga con «reducir movimiento».',
-        ],
-      },
-      {
-        heading: 'Técnica',
-        items: [
-          'Astro y MDX. La web es HTML estático con casi nada de JavaScript: solo el cambio de tema, el reloj, el botón de copiar el email y el vídeo.',
-          'Añadir un proyecto es crear dos archivos MDX (español e inglés). Su cabecera está validada con Zod: si falta un dato, la compilación falla en vez de publicar algo a medias.',
-          'Los datos que cambian se editan en un único archivo: las tecnologías (tech.ts), los accesos directos (shortcuts.ts) y el texto de «sobre mí» (about.ts).',
-          'Bilingüe. Los textos de la interfaz viven en un archivo de traducciones y el inglés cuelga de /en/.',
-          'Vídeo con fachada. El reproductor no descarga nada de YouTube hasta que se pulsa, y entonces usa youtube-nocookie.com.',
-          'Imágenes optimizadas. Astro las convierte a WebP y genera varios tamaños: mi foto pasa de 110 kB a entre 10 y 58 kB.',
-          'El email público se codifica en entidades HTML como protección básica contra robots de spam.',
-        ],
-      },
-      {
-        heading: 'Accesibilidad',
-        items: [
-          'HTML semántico, un solo h1 por página, enlace para saltar al contenido y foco de teclado siempre visible.',
-          'Cada icono es un enlace normal con el nombre a la vista, y se activa con Enter. El hover solo anima con ratón real.',
-          'Los botones decorativos de las barras de título se ocultan a los lectores de pantalla.',
-        ],
-      },
-    ],
-  },
-  en: {
-    title: 'how_its_made.txt — Notepad',
-    heading: 'How it is made',
-    description:
-      'The design and technical decisions behind this portfolio: Astro, MDX, original retro design, accessibility and performance.',
-    intro:
-      'This portfolio looks like an early-2000s desktop, but it is a normal scrolling website: no draggable windows, so reaching a project takes a single click. These are the decisions behind it.',
-    sections: [
-      {
-        heading: 'Design',
-        items: [
-          'Retro, but original. Inspired by the Windows XP desktop, with no Microsoft logos, fonts or wallpapers. The hills landscape is built from SVG rectangles and the icons are 16×16 pixel grids drawn by hand as text.',
-          'Light and dark mode. Every colour is defined once with light-dark(): midday in light, dusk in dark, with the same landscape.',
-          'Typography made for reading. Pixelify Sans only at regular weight (in bold, "Contacto" read as "Oontacto"), Atkinson Hyperlegible Next for body text and Permanent Marker only for small touches.',
-          'Labels that read on any background. Icon names sit on a navy pill instead of floating over the landscape.',
-          'Measured motion. Windows open in a cascade in about 300 ms and icons hop slightly with the mouse. There is no boot screen making anyone wait, and everything switches off with "reduce motion".',
-        ],
-      },
-      {
-        heading: 'Technical',
-        items: [
-          'Astro and MDX. The site is static HTML with almost no JavaScript: only the theme switch, the clock, the copy-email button and the video.',
-          'Adding a project means creating two MDX files (Spanish and English). Their header is validated with Zod: if a field is missing, the build fails instead of publishing something half-finished.',
-          'Data that changes lives in a single file each: technologies (tech.ts), shortcuts (shortcuts.ts) and the "about me" text (about.ts).',
-          'Bilingual. Interface text lives in one translations file and English sits under /en/.',
-          'Video behind a facade. The player downloads nothing from YouTube until it is clicked, and then it uses youtube-nocookie.com.',
-          'Optimised images. Astro converts them to WebP in several sizes: my photo goes from 110 kB to between 10 and 58 kB.',
-          'The public email is encoded as HTML entities as basic protection against spam bots.',
-        ],
-      },
-      {
-        heading: 'Accessibility',
-        items: [
-          'Semantic HTML, a single h1 per page, a skip-to-content link and an always-visible keyboard focus.',
-          'Every icon is a regular link with its name in view, and works with Enter. Hover only animates with a real mouse.',
-          'The decorative buttons on window title bars are hidden from screen readers.',
-        ],
-      },
-    ],
-  },
-};
-
-const page = content[lang];
+const page = howItsMade[lang];
 ---
 
 <PageDesk lang={lang} title={`${page.heading} · Marta Prieto`} description={page.description}>

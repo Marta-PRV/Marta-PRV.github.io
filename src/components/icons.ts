@@ -400,6 +400,24 @@ export const icons = {
     '......kkkk......',
     '................',
   ],
+  windows: [
+    '................',
+    '.kkkkkkkkkk.....',
+    '.kBBBBBBBBk.....',
+    '.kwwwwwwwwk.....',
+    '.kwwwwwwwwk.....',
+    '.kwwwkkkkkkkkkk.',
+    '.kwwwkBBBBBBBBk.',
+    '.kwwwkwwwwwwwwk.',
+    '.kwwwkwwwwwwwwk.',
+    '.kkkkkwwwwwwwwk.',
+    '.....kwwwwwwwwk.',
+    '.....kwwwwwwwwk.',
+    '.....kkkkkkkkkk.',
+    '................',
+    '................',
+    '................',
+  ],
 } as const satisfies Record<string, readonly string[]>;
 
 export type IconName = keyof typeof icons;

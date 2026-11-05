@@ -2,7 +2,7 @@
 // Garabatos a mano alzada (trazos de rotulador). Son formas geométricas simples
 // y puramente decorativas, así que se ocultan a los lectores de pantalla.
 interface Props {
-  kind: 'arrow' | 'underline' | 'star';
+  kind: 'arrow' | 'arrowDown' | 'underline' | 'star';
   /** Ancho en px; el alto se ajusta solo. */
   width?: number;
   class?: string;
@@ -12,6 +12,8 @@ const { kind, width = 80, class: className } = Astro.props;
 
 const shapes = {
   arrow: { box: '0 0 80 50', d: 'M4 40 C20 8 48 4 70 22 M57 13 L71 23 L59 35' },
+  // Flecha que baja con un pequeño rizo y punta clara (apunta a lo que hay debajo)
+  arrowDown: { box: '0 0 40 64', d: 'M20 3 C12 16 28 28 20 52 M8 42 L20 58 L32 42' },
   underline: { box: '0 0 120 12', d: 'M3 8 C25 2 50 11 75 5 S105 4 117 7' },
   star: { box: '0 0 40 40', d: 'M20 4 L24 16 L37 16 L27 24 L31 36 L20 29 L9 36 L13 24 L3 16 L16 16 Z' },
 } as const;

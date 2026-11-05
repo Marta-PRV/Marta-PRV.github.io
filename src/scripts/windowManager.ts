@@ -4,7 +4,10 @@
  * Qué hace (y por qué necesita JS):
  *  - Arrastrar ventanas por su barra de título (Pointer Events + `translate`).
  *  - Traer al frente la que se pulsa o recibe el foco (así Tab nunca deja algo tapado).
- *  - Minimizar / maximizar / cerrar, y la barra de tareas con un botón por ventana.
+ *  - Minimizar / maximizar / cerrar, y los botones de la barra de tareas y del menú Inicio.
+ *  - Una sola regla para "activar" una ventana: cerrada -> se abre; minimizada -> se
+ *    restaura; detrás -> al frente; ya delante -> un destello de la barra de título.
+ *  - Extras decorativos (música y avisos): empiezan cerrados si no hay sitio libre.
  *  - "Recolocar": devuelve todo a su sitio y reabre lo cerrado.
  *  - Esc: cierra la ventana de página (proyecto) y vuelve al escritorio.
  *  - Recuerda posiciones y estado en sessionStorage mientras dura la visita.
@@ -15,14 +18,17 @@
  * Todos los eventos están delegados en `document`: no dependen de elementos concretos.
  */
 
-// Debe coincidir con el criterio de src/styles/desktop.css
+// Deben coincidir con los criterios de src/styles/desktop.css
 const DESKTOP_QUERY = '(min-width: 76rem) and (min-height: 38rem)';
+/** Hay sitio libre para los extras (música y avisos) sin tapar ventanas importantes. */
+const ROOM_QUERY = '(min-width: 100rem) and (min-height: 42rem)';
 const STORE = 'desk:v1';
 const DEFAULT_FRONT = 'sobre-mi';
 const Z_BASE = 100;
 const KEEP_VISIBLE = 96; // px de la ventana que deben quedar siempre dentro del escritorio
 
 const mq = window.matchMedia(DESKTOP_QUERY);
+const room = window.matchMedia(ROOM_QUERY);
 const root = document.documentElement;
 let zTop = Z_BASE;
 let drag: { win: HTMLElement; startX: number; startY: number; dx0: number; dy0: number; baseLeft: number; baseTop: number; width: number } | null = null;
@@ -31,7 +37,12 @@ const active = () => mq.matches && root.classList.contains('wm');
 const desk = () => document.querySelector<HTMLElement>('[data-desk]');
 const windows = () => Array.from(document.querySelectorAll<HTMLElement>('.desk .window[data-draggable]'));
 const byId = (id: string | undefined) => windows().find((w) => w.dataset.window === id);
+const group = (prefix: string | undefined) => windows().filter((w) => prefix && w.dataset.window?.startsWith(prefix));
+const isExtra = (w: HTMLElement) => w.hasAttribute('data-extra');
 const num = (v: string) => parseFloat(v) || 0;
+
+/** Estado inicial de una ventana: los extras solo empiezan abiertos si hay sitio libre. */
+const defaultState = (w: HTMLElement) => (isExtra(w) && !room.matches ? 'closed' : 'open');
 
 /* ───────────── Estado guardado ───────────── */
 
@@ -68,6 +79,33 @@ function save() {
   }
 }
 
+/* ───────────── Botones de la barra de tareas, bandeja y menú ───────────── */
+
+type WinState = 'closed' | 'open' | 'front';
+
+function winState(w: HTMLElement): WinState {
+  if (w.dataset.state === 'closed') return 'closed';
+  if (w.dataset.state === 'min') return 'open';
+  return w.hasAttribute('data-front') ? 'front' : 'open';
+}
+
+/** Refleja el estado de cada ventana en sus botones (estado visual y aria-pressed). */
+function updateButtons() {
+  document.querySelectorAll<HTMLElement>('[data-toggle]').forEach((btn) => {
+    const w = byId(btn.dataset.toggle);
+    if (!w) return;
+    const st = winState(w);
+    btn.dataset.winState = st;
+    // Botón fijo: "pulsado" = es la ventana delantera. Extra: "pulsado" = está visible.
+    const pressed = isExtra(w) ? w.dataset.state === 'open' : st === 'front';
+    btn.setAttribute('aria-pressed', String(pressed));
+  });
+  document.querySelectorAll<HTMLElement>('[data-toggle-group]').forEach((btn) => {
+    const anyOpen = group(btn.dataset.toggleGroup).some((w) => w.dataset.state === 'open');
+    btn.setAttribute('aria-pressed', String(anyOpen));
+  });
+}
+
 /* ───────────── Ventanas ───────────── */
 
 function front(win: HTMLElement) {
@@ -82,15 +120,16 @@ function front(win: HTMLElement) {
       w.removeAttribute('data-front');
     }
   }
-  syncTasks();
+  updateButtons();
   save();
 }
 
-/** La ventana abierta que está más arriba (para pasarle el foco al cerrar o minimizar otra). */
+/** La ventana abierta que está más arriba (para pasarle el frente al cerrar o minimizar otra). */
 function topmostOpen(except?: HTMLElement) {
+  const z = (w: HTMLElement) => num(w.style.zIndex || getComputedStyle(w).zIndex);
   return windows()
     .filter((w) => w !== except && w.dataset.state === 'open')
-    .sort((a, b) => num(b.style.zIndex || getComputedStyle(b).zIndex) - num(a.style.zIndex || getComputedStyle(a).zIndex))[0];
+    .sort((a, b) => z(b) - z(a))[0];
 }
 
 function focusWindow(win: HTMLElement) {
@@ -100,9 +139,17 @@ function focusWindow(win: HTMLElement) {
   title.focus({ preventScroll: true });
 }
 
+/** Hace visible una ventana (abierta o restaurada) sin traerla al frente todavía. */
+function show(win: HTMLElement) {
+  win.dataset.state = 'open';
+  // Los extras abiertos a propósito deben verse aunque el escritorio sea pequeño
+  if (isExtra(win)) win.setAttribute('data-shown', '');
+}
+
 function setState(win: HTMLElement, state: 'open' | 'min' | 'closed') {
   const wasFront = win.hasAttribute('data-front');
-  win.dataset.state = state;
+  if (state === 'open') show(win);
+  else win.dataset.state = state;
   if (state !== 'open') {
     win.removeAttribute('data-front');
     if (wasFront) {
@@ -110,15 +157,75 @@ function setState(win: HTMLElement, state: 'open' | 'min' | 'closed') {
       if (next) front(next);
     }
   }
-  syncTasks();
+  updateButtons();
   save();
 }
 
-function openWindow(win: HTMLElement) {
-  win.dataset.state = 'open';
+/** Destello breve de la barra de título: "esta es la ventana que has pedido". */
+function flash(win: HTMLElement) {
+  win.removeAttribute('data-flash');
+  void win.offsetWidth; // reinicia la animación
+  win.setAttribute('data-flash', '');
+  window.setTimeout(() => win.removeAttribute('data-flash'), 1000);
+}
+
+/**
+ * LA regla para abrir una ventana desde el menú Inicio o un icono:
+ * cerrada -> se abre; minimizada -> se restaura; detrás -> al frente; ya delante -> destello.
+ */
+function activateWindow(win: HTMLElement) {
+  const wasFront = win.dataset.state === 'open' && win.hasAttribute('data-front');
+  show(win);
   front(win);
-  syncTasks();
+  updateButtons();
   focusWindow(win);
+  if (wasFront) flash(win);
+  save();
+}
+
+/** Botón fijo de la barra de tareas: cerrada -> abre; detrás -> frente; delante -> minimiza (extras: cierra). */
+function toggleWindow(win: HTMLElement) {
+  if (win.dataset.state !== 'open') {
+    show(win);
+    front(win);
+  } else if (!win.hasAttribute('data-front')) {
+    front(win);
+  } else {
+    setState(win, isExtra(win) ? 'closed' : 'min');
+    return;
+  }
+  updateButtons();
+  save();
+}
+
+/** Grupo de ventanas (los 3 avisos): si alguno está abierto se cierran todos; si no, se abren todos. */
+function toggleGroup(prefix: string | undefined) {
+  const ws = group(prefix);
+  if (!ws.length) return;
+  if (ws.some((w) => w.dataset.state === 'open')) {
+    ws.forEach((w) => {
+      w.dataset.state = 'closed';
+      w.removeAttribute('data-front');
+    });
+    const next = topmostOpen();
+    if (next && !windows().some((w) => w.hasAttribute('data-front'))) front(next);
+  } else {
+    openGroup(prefix);
+    return;
+  }
+  updateButtons();
+  save();
+}
+
+function openGroup(prefix: string | undefined) {
+  const ws = group(prefix);
+  ws.forEach(show);
+  const last = ws[ws.length - 1];
+  if (last) {
+    last.removeAttribute('data-front');
+    front(last);
+  }
+  updateButtons();
   save();
 }
 
@@ -129,38 +236,6 @@ function toggleMaximize(win: HTMLElement) {
   if (btn) btn.setAttribute('aria-pressed', String(max));
   front(win);
   save();
-}
-
-/* ───────────── Barra de tareas ───────────── */
-
-function syncTasks() {
-  const list = document.querySelector<HTMLElement>('[data-tasks]');
-  if (!list) return;
-  const shown = new Set<string>();
-  for (const w of windows()) {
-    const id = w.dataset.window!;
-    if (w.dataset.state === 'closed') continue;
-    shown.add(id);
-    let btn = list.querySelector<HTMLButtonElement>(`[data-win="${id}"]`);
-    if (!btn) {
-      const li = document.createElement('li');
-      btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'task';
-      btn.dataset.win = id;
-      const icon = w.querySelector('.window__bar > svg')?.cloneNode(true);
-      const label = document.createElement('span');
-      label.textContent = w.querySelector('.window__title')?.textContent ?? id;
-      if (icon) btn.append(icon);
-      btn.append(label);
-      li.append(btn);
-      list.append(li);
-    }
-    btn.setAttribute('aria-pressed', String(w.hasAttribute('data-front') && w.dataset.state === 'open'));
-  }
-  list.querySelectorAll<HTMLElement>('[data-win]').forEach((b) => {
-    if (!shown.has(b.dataset.win!)) b.closest('li')?.remove();
-  });
 }
 
 /* ───────────── Arrastre ───────────── */
@@ -219,6 +294,7 @@ function onPointerEnd() {
 function clampAll() {
   if (!active()) return;
   for (const w of windows()) {
+    if (w.dataset.state !== 'open') continue; // las ocultas no tienen caja que medir
     const b = bounds(w);
     const c = clamp(b.r.left, b.r.top, b.r.width, b.d);
     w.style.setProperty('--dx', `${b.dx + (c.left - b.r.left)}px`);
@@ -236,7 +312,8 @@ function reset() {
     w.style.removeProperty('--dx');
     w.style.removeProperty('--dy');
     w.style.zIndex = '';
-    w.dataset.state = 'open';
+    w.dataset.state = defaultState(w);
+    if (isExtra(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
     w.removeAttribute('data-max');
     w.removeAttribute('data-front');
     w.setAttribute('data-inactive', '');
@@ -244,7 +321,7 @@ function reset() {
   zTop = Z_BASE;
   const first = byId(DEFAULT_FRONT) ?? windows()[0];
   if (first) front(first);
-  syncTasks();
+  updateButtons();
   try {
     sessionStorage.removeItem(STORE);
   } catch {
@@ -265,7 +342,10 @@ function enable() {
       w.style.setProperty('--dy', `${s.dy}px`);
       w.dataset.state = s.s;
       w.toggleAttribute('data-max', !!s.m);
+    } else {
+      w.dataset.state = defaultState(w); // los extras empiezan cerrados si no hay sitio libre
     }
+    if (isExtra(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
     w.setAttribute('data-inactive', '');
   }
   // Orden de apilado guardado (de atrás hacia delante)
@@ -274,19 +354,21 @@ function enable() {
     if (w) w.style.zIndex = String(++zTop);
   });
   const start = byId(DEFAULT_FRONT);
-  const last = saved?.order.map(byId).filter((w) => w && w.dataset.state === 'open').pop() ?? start;
+  const last = saved?.order.map(byId).filter((w) => w && w.dataset.state === 'open' && !isExtra(w)).pop() ?? start;
   if (last) {
     last.removeAttribute('data-front');
     front(last);
-  } else {
-    syncTasks();
   }
+  // Los botones fijos son enlaces #id: con el gestor activo se comportan como botones
+  document.querySelectorAll<HTMLElement>('a[data-toggle]').forEach((a) => a.setAttribute('role', 'button'));
+  updateButtons();
   clampAll();
 }
 
 function disable() {
   root.classList.remove('wm');
   document.body.classList.remove('is-dragging');
+  document.querySelectorAll<HTMLElement>('a[data-toggle]').forEach((a) => a.removeAttribute('role'));
   drag = null;
 }
 
@@ -323,8 +405,13 @@ document.addEventListener('click', (e) => {
 
   if (!active()) return;
 
+  // Con una ventana de página abierta (proyecto…) el escritorio de detrás es inerte:
+  // los enlaces del menú navegan con normalidad (p. ej. "Sobre mí" lleva a /#sobre-mi).
+  if (document.querySelector('.window--page')) return;
+
   const action = target.closest<HTMLElement>('[data-action]');
   if (action?.dataset.action === 'reset') {
+    e.preventDefault();
     reset();
     return;
   }
@@ -345,24 +432,36 @@ document.addEventListener('click', (e) => {
     }
   }
 
-  // Botón de la barra de tareas: traer, restaurar o minimizar
-  const task = target.closest<HTMLElement>('[data-win]');
-  if (task) {
-    const w = byId(task.dataset.win);
-    if (!w) return;
-    if (w.dataset.state === 'min') openWindow(w);
-    else if (w.hasAttribute('data-front')) setState(w, 'min');
-    else openWindow(w);
+  // Botones de la barra de tareas y de la bandeja
+  const toggle = target.closest<HTMLElement>('[data-toggle]');
+  if (toggle) {
+    const w = byId(toggle.dataset.toggle);
+    if (w) {
+      e.preventDefault();
+      toggleWindow(w);
+    }
+    return;
+  }
+  const toggleGrp = target.closest<HTMLElement>('[data-toggle-group]');
+  if (toggleGrp) {
+    e.preventDefault();
+    toggleGroup(toggleGrp.dataset.toggleGroup);
     return;
   }
 
-  // Iconos / menú Inicio que abren una ventana de la portada (en vez de navegar)
+  // Menú Inicio e iconos que abren ventanas
+  const openGrp = target.closest<HTMLElement>('[data-open-group]');
+  if (openGrp) {
+    e.preventDefault();
+    openGroup(openGrp.dataset.openGroup);
+    return;
+  }
   const opener = target.closest<HTMLElement>('[data-open]');
   if (opener) {
     const w = byId(opener.dataset.open);
     if (w) {
       e.preventDefault();
-      openWindow(w);
+      activateWindow(w);
     }
     return;
   }
@@ -376,6 +475,16 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  // Los botones fijos son enlaces con role="button": la barra espaciadora también los activa
+  if (e.key === ' ' && active()) {
+    const btn = (e.target as Element).closest<HTMLAnchorElement>('a[role="button"][data-toggle]');
+    if (btn) {
+      e.preventDefault();
+      btn.click();
+      return;
+    }
+  }
+
   if (e.key !== 'Escape' || e.defaultPrevented) return;
   if (document.querySelector(':popover-open')) return; // el menú Inicio gestiona su propio Esc
 
@@ -416,6 +525,12 @@ function init() {
   const page = document.querySelector<HTMLElement>('.window--page');
   if (page) {
     focusWindow(page);
+    return;
+  }
+  // Llegada con #ancla de una ventana (p. ej. desde el menú Inicio de otra página): se activa
+  const hashWin = active() ? byId(decodeURIComponent(location.hash.slice(1))) : undefined;
+  if (hashWin) {
+    activateWindow(hashWin);
     return;
   }
   focusTarget();

@@ -39,8 +39,9 @@ body {
 @media (min-width: 76rem) and (min-height: 38rem) {
   .desk {
     overflow: hidden;
-    /* Origen del collage: deja sitio a la columna de iconos y centra el conjunto en pantallas anchas */
-    --ox: clamp(14rem, calc(50% - 30rem), 26rem);
+    /* Origen del collage (x de la foto). La columna de proyectos mide ~7rem; el conjunto de
+       ventanas importantes mide ~62.5rem y se centra en pantallas anchas. */
+    --ox: clamp(7rem, calc(50% - 31rem), 26rem);
   }
 
   .desk .window[data-draggable] {
@@ -48,7 +49,8 @@ body {
     left: var(--x, 0);
     top: var(--y, 0);
     width: var(--w, auto);
-    max-height: calc(100% - 1rem);
+    /* Nunca más alta que el hueco que queda bajo su posición: si el texto no cabe, hay scroll DENTRO */
+    max-height: calc(100% - var(--y, 0px) - 0.5rem);
     translate: var(--dx, 0px) var(--dy, 0px);
   }
 
@@ -74,11 +76,19 @@ body {
     transition: translate 250ms var(--ease-out);
   }
 
-  /* Columna de iconos pegada a la izquierda; pasa a una segunda columna si no caben */
+  /* Iconos: proyectos en una columna a la izquierda (empieza más abajo para dejar sitio al
+     título a mano) y accesos en una columna a la derecha. Si no caben, pasan a otra columna. */
   .icons {
     position: absolute;
-    inset: 0.5rem auto 0.5rem 0.5rem;
     z-index: 0;
+  }
+
+  .icons--left {
+    inset: 6rem auto 0.5rem 0.5rem;
+  }
+
+  .icons--right {
+    inset: 0.5rem 0.5rem auto auto;
   }
 
   .icons__list {
@@ -88,6 +98,9 @@ body {
     align-content: start;
     justify-content: start;
     gap: 0.25rem;
+  }
+
+  .icons--left .icons__list {
     height: 100%;
   }
 
@@ -95,7 +108,9 @@ body {
     display: none;
   }
 
-  /* ── El collage: posiciones iniciales ── */
+  /* ── Ventanas IMPORTANTES: colocación inicial sin solapes (salvo el solape deliberado foto/bloc) ──
+     Todo se mide desde --ox, así que escala con la pantalla. --tech-h es la altura de la ventana de
+     tecnologías (3 filas): si se añaden tecnologías hasta una 4ª fila, súbela. */
   .desk .window[data-window='foto'] {
     --x: var(--ox);
     --y: 1rem;
@@ -103,83 +118,97 @@ body {
     z-index: 6;
   }
 
-  /* El bloc cubre ~3rem de la foto, por debajo de la cara */
+  /* Redes: justo debajo de la foto */
+  .desk .window[data-window='redes'] {
+    --x: var(--ox);
+    --y: 25rem;
+    --w: var(--w-redes);
+    z-index: 7;
+  }
+
+  /* El bloc cubre ~2.5rem de la foto, por debajo de la cara */
   .desk .window[data-window='sobre-mi'] {
-    --x: calc(var(--ox) + 14.5rem);
-    --y: 9rem;
+    --x: calc(var(--ox) + 15rem);
+    --y: 5rem;
     --w: var(--w-notepad);
     z-index: 9;
   }
 
   .desk .window[data-window='tecnologias'] {
-    --x: calc(var(--ox) + 34.5rem);
+    --x: calc(var(--ox) + 36.5rem);
     --y: 1rem;
     --w: var(--w-tech);
     z-index: 8;
   }
 
+  /* Contacto: debajo de tecnologías */
   .desk .window[data-window='contacto'] {
-    --x: calc(var(--ox) + 37.5rem);
+    --x: calc(var(--ox) + 39.5rem);
+    --y: calc(1rem + var(--tech-h) + 1rem);
     --w: var(--w-contact);
-    top: auto;
-    bottom: 3.25rem;
     z-index: 7;
   }
 
+  /* ── EXTRAS decorativos (música y avisos): a la derecha del conjunto (anclados a --ox, así nunca chocan
+     con tecnologías ni contacto) y siempre por debajo de las
+     ventanas importantes. Solo hay sitio cuando el escritorio es ancho y alto: si no, empiezan
+     cerrados y se abren desde la bandeja o el menú Inicio (ver windowManager.ts). ── */
   .desk .window[data-window='escuchando'] {
-    --x: var(--ox);
     --w: var(--w-player);
+    --x: calc(var(--ox) + 63rem);
     top: auto;
     bottom: 1rem;
+    max-height: none;
     z-index: 5;
   }
 
-  /* Avisos en cascada, abajo a la derecha: el último queda delante */
   .desk .window[data-window^='aviso-'] {
     --w: var(--w-alert);
-    left: auto;
-    top: auto;
+    max-height: none;
   }
 
   .desk .window[data-window='aviso-info'] {
-    right: 6.5rem;
-    bottom: 6.25rem;
+    --x: calc(var(--ox) + 63rem);
+    --y: 9rem;
     z-index: 2;
   }
 
   .desk .window[data-window='aviso-error'] {
-    right: 4rem;
-    bottom: 4.5rem;
+    --x: calc(var(--ox) + 64.5rem);
+    --y: 11.5rem;
     z-index: 3;
   }
 
   .desk .window[data-window='aviso-warning'] {
-    right: 1.5rem;
-    bottom: 2.75rem;
+    --x: calc(var(--ox) + 66rem);
+    --y: 14rem;
     z-index: 4;
   }
 
-  /* Decoración: garabato y pegatinas (sin clics, debajo de las ventanas) */
-  /* El garabato solo aparece si hay alto de sobra (con poca altura los iconos usan 2 columnas y chocaría) */
+  /* Sin JS (o antes de que arranque), en pantallas sin sitio libre los extras no se ven */
+  @media (max-width: 99.99rem), (max-height: 41.99rem) {
+    .desk .window[data-extra][data-state='open']:not([data-shown]) {
+      display: none;
+    }
+  }
+
+  /* Decoración: título a mano con flecha hacia los proyectos, y pegatinas (sin clics, debajo de las ventanas) */
   .hint {
     position: absolute;
-    top: 1.25rem;
-    left: 6.5rem;
+    top: 0.5rem;
+    left: 0.75rem;
     z-index: 0;
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
-    rotate: -5deg;
+    gap: 0;
+    max-width: calc(var(--ox) - 1rem);
+    rotate: -3deg;
     pointer-events: none;
   }
 
   .hint :global(.hint__arrow) {
-    scale: -1 1;
-    margin-inline-start: 0.5rem;
-  }
-
-  .sticker--cd {
-    right: 1.5rem;
-    top: 1.25rem;
+    margin-inline-start: 1.25rem;
   }
 
   .sticker--pc {
@@ -187,8 +216,13 @@ body {
     bottom: 0.5rem;
   }
 
+  .sticker--cd {
+    left: calc(var(--ox) + 22rem);
+    bottom: 0.75rem;
+  }
+
   .sticker--floppy {
-    right: 20rem;
+    left: calc(var(--ox) + 29rem);
     bottom: 0.75rem;
   }
 
@@ -229,12 +263,6 @@ body {
   }
 }
 
-@media (min-width: 76rem) and (min-height: 46rem) {
-  .hint {
-    display: flex;
-  }
-}
-
 /* ───────────────────────── Modo apps (móvil y pantallas pequeñas) ───────────────────────── */
 @media (max-width: 75.99rem), (max-height: 37.99rem) {
   .desk {
@@ -252,7 +280,8 @@ body {
   }
 
   .hint,
-  .sticker {
+  .sticker,
+  .icons--right {
     display: none;
   }
 

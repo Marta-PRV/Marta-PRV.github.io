@@ -38,6 +38,7 @@ const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Forma
 
 <style>
   .menu {
+    flex: none; /* si la ventana se limita en alto, el menú no debe encogerse ni recortarse */
     display: flex;
     gap: var(--s-4);
     padding: var(--s-1) var(--s-3);
@@ -50,7 +51,7 @@ const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Forma
   }
 
   .paper {
-    padding: var(--s-5);
+    padding: var(--s-4);
     color: var(--paper-text);
     background: var(--paper);
     border: 1px solid var(--window-line);
@@ -58,9 +59,19 @@ const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Forma
     margin: var(--s-1);
   }
 
+  /* Texto un punto más compacto (15px) para que el bloc se lea entero sin scroll en pantallas bajas */
+  .paper :global(.prose) {
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .paper :global(.prose > * + *) {
+    margin-block-start: var(--s-3);
+  }
+
   @media (min-width: 40rem) {
     .paper {
-      padding: var(--s-6);
+      padding: var(--s-5);
     }
   }
 </style>

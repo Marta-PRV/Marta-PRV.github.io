@@ -2,13 +2,15 @@
 // Contenido del escritorio de la portada: iconos, ventanas, pegatinas y garabato.
 // Cómo se coloca (PC: collage con ventanas absolutas; móvil: rejilla de iconos y
 // ventanas a pantalla completa) está en src/styles/desktop.css.
-// Orden del DOM = orden de Tab: primero los iconos (proyectos y accesos), luego las ventanas.
+// Orden del DOM = orden de Tab: primero los iconos (proyectos a la izquierda, "Cómo
+// está hecho" a la derecha), luego las ventanas.
 import { getCollection } from 'astro:content';
 import DesktopIcon from './DesktopIcon.astro';
 import PaintPhoto from './PaintPhoto.astro';
 import NotepadAbout from './NotepadAbout.astro';
 import TechWindow from './TechWindow.astro';
 import ContactWindow from './ContactWindow.astro';
+import SocialsWindow from './SocialsWindow.astro';
 import NowPlaying from './NowPlaying.astro';
 import AlertDialog from './AlertDialog.astro';
 import Sticker from './Sticker.astro';
@@ -37,23 +39,26 @@ const projectHref = (id: string) => localePath(lang, `${sectionSlug(lang, 'proye
 
 function shortcutHref(s: (typeof shortcuts)[number]) {
   if (s.kind === 'external') return s.target;
-  if (s.kind === 'anchor') return `${localePath(lang)}#${s.target}`;
   return localePath(lang, sectionSlug(lang, s.target as 'como-esta-hecho'));
 }
 
-// Iconos que solo existen en el modo móvil: abren las ventanas de la portada como "apps".
+// Iconos que solo existen en el modo móvil: abren las ventanas de la portada como "apps"
+// (en PC esas ventanas ya están en el escritorio y se manejan desde la barra de tareas).
 const apps = [
-  { id: 'sobre-mi', icon: 'notepad' as const, label: t('nav.about') },
-  { id: 'tecnologias', icon: 'folder' as const, label: t('tech.short') },
-  { id: 'foto', icon: 'paint' as const, label: t('photo.short') },
+  { href: '#sobre-mi', icon: 'notepad' as const, label: t('nav.about') },
+  { href: '#foto', icon: 'paint' as const, label: t('photo.short') },
+  { href: '#tecnologias', icon: 'folder' as const, label: t('tech.short') },
+  { href: '#contacto', icon: 'mail' as const, label: t('nav.contact') },
+  { href: '#redes', icon: 'globe' as const, label: t('redes.short') },
 ];
 ---
 
 <div class:list={['desktop', { 'desktop--behind': behind }]}>
   {behind ? <p class="visually-hidden">{t('home.h1')}</p> : <h1 class="visually-hidden">{t('home.h1')}</h1>}
 
-  <section class="icons" id="proyectos" aria-labelledby="h-iconos">
-    <h2 class="visually-hidden" id="h-iconos">{t('desk.icons')}</h2>
+  <!-- Columna izquierda: SOLO proyectos (en móvil la rejilla también lleva las "apps") -->
+  <section class="icons icons--left" id="proyectos" aria-labelledby="h-proyectos">
+    <h2 class="visually-hidden" id="h-proyectos">{t('nav.projects')}</h2>
     <ul class="icons__list">
       {
         projects.map((p) => (
@@ -65,30 +70,38 @@ const apps = [
       {
         apps.map((a) => (
           <li class="app-only">
-            <DesktopIcon href={`#${a.id}`} label={a.label} icon={a.icon} />
+            <DesktopIcon href={a.href} label={a.label} icon={a.icon} />
           </li>
         ))
       }
       {
         shortcuts.map((s) => (
-          <li>
-            <DesktopIcon
-              href={shortcutHref(s)}
-              label={s.label[lang]}
-              icon={s.icon}
-              external={s.kind === 'external'}
-              open={s.kind === 'anchor' ? s.target : undefined}
-            />
+          <li class="app-only">
+            <DesktopIcon href={shortcutHref(s)} label={s.label[lang]} icon={s.icon} external={s.kind === 'external'} />
           </li>
         ))
       }
     </ul>
   </section>
 
-  <!-- Decoración (solo PC): garabato que señala los iconos y pegatinas sueltas -->
+  <!-- Zona derecha (solo PC): accesos directos -->
+  <section class="icons icons--right" aria-labelledby="h-accesos">
+    <h2 class="visually-hidden" id="h-accesos">{t('home.shortcuts')}</h2>
+    <ul class="icons__list">
+      {
+        shortcuts.map((s) => (
+          <li>
+            <DesktopIcon href={shortcutHref(s)} label={s.label[lang]} icon={s.icon} external={s.kind === 'external'} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Decoración (solo PC): título a mano con flecha hacia los proyectos, y pegatinas sueltas -->
   <p class="hint" aria-hidden="true">
-    <Scribble kind="arrow" width={64} class="hint__arrow" />
     <span>{t('desk.hint')}</span>
+    <Scribble kind="arrowDown" width={30} class="hint__arrow" />
   </p>
   <Sticker icon="cd" size={64} rotate={-8} class="sticker--cd" />
   <Sticker icon="computer" size={64} rotate={6} class="sticker--pc" />
@@ -101,8 +114,9 @@ const apps = [
   </NotepadAbout>
   <TechWindow title={t('tech.title')} index={2} />
   <ContactWindow index={3} />
-  <NowPlaying title={t('player.title')} lang={lang} index={4} />
-  {alerts.map((a, i) => <AlertDialog alert={a} lang={lang} index={5 + i} />)}
+  <SocialsWindow index={4} />
+  <NowPlaying title={t('player.title')} lang={lang} index={5} />
+  {alerts.map((a, i) => <AlertDialog alert={a} lang={lang} index={6 + i} />)}
 </div>
 
 <style>
@@ -120,10 +134,10 @@ const apps = [
 
   .hint span {
     font-family: var(--font-marker);
-    font-size: 1.25rem;
+    font-size: 1rem;
+    line-height: 1.1;
     color: var(--ink);
     text-shadow: 0 1px 0 rgb(255 255 255 / 0.5);
-    white-space: nowrap;
   }
 
   /* Detrás de una ventana de página no se repite la animación de entrada */

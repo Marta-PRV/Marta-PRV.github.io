@@ -38,13 +38,15 @@ Reglas: la barra de título tiene solo dos tonos (azul marino → azul); **la ve
 - Barra de título: icono + título + tres botones **reales**: minimizar, maximizar, cerrar. Botones biselados que se **hunden 1px** al pulsar; objetivo táctil/clic ≥ 24px con zona ampliada.
 - Cuerpo con `overflow: auto` y scroll **solo interno**. Es un `section`/`article` con `aria-labelledby` (no `dialog`, salvo la ventana de proyecto).
 - Estados: abierta (delantera / de fondo), minimizada (oculta, su botón sigue en la barra de tareas), cerrada (oculta y sin botón; se reabre desde Inicio o con Recolocar), maximizada (llena el escritorio; Esc la restaura).
-- Anchos compactos por defecto: foto ~17.5rem · bloc ~23rem · tecnologías ~28rem · contacto ~20rem · reproductor ~18rem · avisos ~17rem · proyecto ≤ 60rem.
+- Anchos compactos por defecto: foto 17.5rem · bloc 21rem · tecnologías 26rem · contacto 19rem · redes 14.5rem · reproductor 13.5rem · avisos 14rem · proyecto ≤ 60rem.
 
-## Escritorio (PC: ancho ≥ 52rem **y** alto ≥ 34rem)
+## Escritorio (PC: ancho ≥ 76rem **y** alto ≥ 38rem)
 - Área de escritorio fija: `position: fixed; inset: 0 0 var(--taskbar-h)`, `overflow: hidden`. **La página nunca hace scroll.**
-- **Columna de iconos pegada a la izquierda** (Proyectos primero, luego accesos), en columna vertical que pasa a una segunda columna si no caben (como un escritorio real). Es lo primero en el orden de Tab.
-- **Collage** (posiciones iniciales en % del escritorio, solapes orgánicos, siempre legibles): Dibujo (foto) y encima `sobre_mi.txt`; Mis tecnologías; Contacto; el reproductor **Escuchando ahora**; **3 diálogos de aviso apilados en cascada** con humor (editables en `src/data/alerts.ts`); **pegatinas pixel** sueltas (CD, ordenador, disquete; decorativas, sin pointer-events); **garabatos** rojos. Se comprueba que cabe sin scroll en 1366×768 y escala hasta 1920×1080.
-- **Barra de tareas** gris con bisel: botón **Inicio** (símbolo propio de colinas/sol) con menú; **un botón por ventana abierta** (la delantera aparece hundida; clic = traer al frente, restaurar o minimizar); botón **Recolocar** (devuelve todas las ventanas a su sitio y reabre las cerradas); bandeja con idioma, tema y reloj.
+- **Columna izquierda = SOLO proyectos**, con el título a mano "mis proyectos" encima y una flecha hacia abajo que apunta al primer icono. Es lo primero en el orden de Tab. **Zona derecha**: accesos directos (hoy solo "Cómo está hecho"). Contacto, LinkedIn y GitHub ya no son iconos: son ventanas.
+- **Ventanas importantes** (foto, bloc, tecnologías, contacto, redes): colocación inicial **sin solapes salvo el deliberado foto/bloc** (el bloc tapa ~2.5rem del borde de la foto, nunca la cara). Todo se mide desde `--ox` (origen del conjunto, centrado en pantallas anchas), así escala con la pantalla. Si el texto de una ventana no cabe en alto, hay scroll dentro de la ventana, nunca fuera del escritorio.
+- **Extras decorativos** (música y 3 avisos con humor, editables en `src/data/alerts.ts`): a la derecha del conjunto, siempre por debajo de las ventanas importantes, y **solo empiezan abiertos si hay sitio libre** (ancho ≥ 100rem y alto ≥ 42rem); si no, empiezan cerrados y se abren desde la bandeja o Inicio. Más **pegatinas pixel** decorativas en la base y el título a mano. Comprobado de 1216×608 a 2560×1300: ningún extra toca una ventana importante.
+- **Barra de tareas** (gris con bisel): `[Inicio] | [Sobre mí][Foto][Tecnologías][Contacto][Mis redes] | … | bandeja: [Recolocar][♪][⚠] · [EN][tema] · reloj`. Los **botones fijos** están siempre: cerrada → la abre; abierta detrás → al frente; minimizada → la restaura; **delante → la minimiza**. Tres estados visuales: cerrada (relieve), abierta (relieve + barrita azul), delante (hundida con trama de puntos; es la única con `aria-pressed`). Los **extras** (música, avisos) son iconos pequeños de la bandeja que abren y cierran ("Avisos" actúa sobre los 3). Con una ventana de página abierta, los botones fijos y los extras se ocultan.
+- **Menú Inicio**: Proyectos ▸ (submenú con los proyectos), Sobre mí, Contacto, Mis redes, Cómo está hecho, separador, Extras ▸ (Música, Avisos), Recolocar el escritorio, Idioma, Tema. Cada ventana: cerrada → se abre; minimizada → se restaura; detrás → al frente; **ya delante → destello breve de la barra de título** (para que no parezca que no hace nada). Submenús tipo *disclosure* (botón con `aria-expanded`; Esc cierra primero el submenú y luego el menú). En móvil se despliegan en vertical y no hay Extras ni Recolocar.
 - Foco por teclado: al enfocar algo dentro de una ventana (Tab), esa ventana pasa al frente, así nada queda tapado para quien navega con teclado.
 
 ## Proyecto como ventana
@@ -59,16 +61,19 @@ Ventana con ecualizador pixel de 12 barras (CSS), marquesina con un título gen�
 ## Iconos de escritorio
 - Pixel 16×16 pintado a ×3 (48px); etiqueta debajo en Pixelify Sans 400 (≥ 15px PC, 14px móvil), con `iconLabel` opcional en el MDX para nombres cortos.
 - Etiqueta blanca sobre pastilla azul marino semiopaca (≥ 4.5:1). Hover/foco: selección azul sólida + contorno punteado; el icono sube 3px solo con ratón real (`hover: hover`), nunca con foco de teclado.
-- Icono temático propio por proyecto (campo `icon`): zombi, paleta, carnet, gafas VR (TFG, más adelante). Accesos: sobre, maletín, `</>`, libro. Sin logos de marcas.
+- Icono temático propio por proyecto (campo `icon`): zombi, paleta, carnet, gafas VR (TFG, más adelante). Acceso de la derecha: libro ("Cómo está hecho").
 - Tecnologías: azulejo pixel con monograma (mini fuente 3×5) y nombre debajo; datos en `src/data/tech.ts`.
 
-## Móvil / apps (ancho < 52rem **o** alto < 34rem)
-- **Sin arrastrar.** El escritorio es una **rejilla de iconos tipo pantalla de inicio** (4 columnas): proyectos, Sobre mí, Tecnologías, Foto, Contacto, LinkedIn, GitHub, Cómo está hecho.
+## Mis redes (logos de marca)
+Ventana con dos **azulejos cuadrados blancos** (como los de tecnologías; siempre blancos, también en oscuro) y un botón por red ("Ver mi LinkedIn", "Ver mi GitHub"). **Excepción documentada** a "sin logos de marcas": solo estos dos, **sin modificarlos** (proporciones y forma originales, color oficial LinkedIn Blue #0A66C2 e Invertocat en negro), solo para **enlazar a mis perfiles** y sin dar a entender que LinkedIn o GitHub respalden esta web. Ambas guías lo permiten (LinkedIn: los miembros pueden usar el logo "in" para su perfil; GitHub: "usa la Invertocat como botón social hacia tu perfil"). Los trazos vienen de la colección Simple Icons (CC0), que reproduce los logos oficiales. Datos en `src/data/socials.ts`.
+
+## Móvil / apps (ancho < 76rem **o** alto < 38rem)
+- **Sin arrastrar.** El escritorio es una **rejilla de iconos tipo pantalla de inicio** (4 columnas): proyectos, Sobre mí, Foto, Tecnologías, Contacto, Mis redes, Cómo está hecho.
 - Cada ventana se abre **a pantalla completa** (encima de la barra de tareas) con scroll interno. Se abre con la URL `#sobre-mi`/`#tecnologias`… (CSS `:target`), el botón "atrás" la cierra, la X es un enlace a `#` y Esc también. Los proyectos son ventanas completas por defecto.
 - Barra de tareas: Inicio + bandeja (idioma, tema, reloj). Sin diálogos de aviso ni pegatinas.
 
 ## Qué usa JavaScript y por qué
-- **Gestor de ventanas** (`src/scripts/windowManager.ts`, vanilla, ~3–4 KB): arrastrar (Pointer Events + `transform`), traer al frente, minimizar/maximizar/cerrar, barra de tareas, Recolocar. CSS no puede mover ventanas ni recordar cuál está delante. **Sin JS** las ventanas quedan fijas en su posición inicial y todo sigue siendo legible y enlazable.
+- **Gestor de ventanas** (`src/scripts/windowManager.ts`, vanilla): arrastrar (Pointer Events + `translate`), traer al frente, minimizar/maximizar/cerrar, botones fijos y extras de la barra de tareas, opciones del menú Inicio, Recolocar, estado inicial de los extras según el espacio libre y destello. CSS no puede mover ventanas ni recordar cuál está delante. **Sin JS** las ventanas quedan fijas en su posición inicial y todo sigue siendo legible y enlazable.
 - **Esc y foco** al abrir/cerrar la ventana de proyecto. La X ya funciona sin JS.
 - **Sin ClientRouter (decisión)**: abrir un proyecto o volver al escritorio es una carga de página normal (robusto, con URL y SEO reales). El gestor guarda posiciones, estado y orden de las ventanas en `sessionStorage` mientras dura la visita, y un script mínimo en línea las aplica antes del primer pintado para que no haya parpadeo. Al volver de un proyecto, el foco regresa al icono desde el que se abrió.
 - Ya existentes: tema, reloj, copiar email, vídeo con fachada.

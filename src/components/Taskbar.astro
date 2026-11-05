@@ -1,12 +1,19 @@
 ---
 // Barra de tareas fija abajo (gris con bisel, estilo Windows 98) = navegación del sitio.
-//  - Inicio: menú con la API nativa `popover` (Esc, clic fuera y foco los gestiona el navegador).
-//  - Botones de ventanas abiertas: los rellena windowManager.ts en PC (un botón por ventana).
-//  - Sin JS, o en móvil, se ven en su lugar los enlaces a las secciones.
-//  - Recolocar: devuelve las ventanas a su sitio (solo existe con el gestor activo).
-//  - Bandeja: idioma, tema y reloj decorativo.
+//
+//  [Inicio] | [Sobre mí][Foto][Tecnologías][Contacto][Mis redes] | ……… | [Recolocar][♪][⚠] | [EN][tema] reloj
+//
+//  - Inicio: menú con la API nativa `popover` (Esc, clic fuera y foco los gestiona el
+//    navegador), con submenús (Proyectos, Extras). Cada opción de ventana abre la ventana si
+//    está cerrada, o la trae al frente (restaurándola si estaba minimizada).
+//  - Botones fijos: siempre los mismos. Cerrada -> la abre; detrás -> al frente; delante -> la minimiza.
+//    Son enlaces #id: sin JS no hacen nada raro y en móvil abren la "app". El gestor
+//    (windowManager.ts) les pone el estado visual y `aria-pressed`.
+//  - Extras decorativos (música, avisos) como iconos pequeños en la bandeja: abren y cierran.
+//  - En modo apps (móvil) solo hay Inicio y la bandeja compacta.
+import { getCollection } from 'astro:content';
 import Icon from './Icon.astro';
-import type { Lang } from '../i18n/ui';
+import { languages, type Lang } from '../i18n/ui';
 import { alternatePath, localePath, sectionSlug, useTranslations } from '../i18n/utils';
 
 interface Props {
@@ -20,13 +27,20 @@ const home = localePath(lang);
 const howHref = localePath(lang, sectionSlug(lang, 'como-esta-hecho'));
 const onHow = Astro.url.pathname === howHref;
 
-// `open` = id de la ventana: en PC el gestor la abre/trae al frente; en móvil el #ancla la abre a pantalla completa.
-const sections = [
-  { href: `${home}#proyectos`, label: t('nav.projects'), icon: 'folder' as const, open: undefined },
-  { href: `${home}#sobre-mi`, label: t('nav.about'), icon: 'notepad' as const, open: 'sobre-mi' },
-  { href: `${home}#tecnologias`, label: t('tech.title'), icon: 'folder' as const, open: 'tecnologias' },
-  { href: `${home}#contacto`, label: t('nav.contact'), icon: 'mail' as const, open: 'contacto' },
+const projects = (await getCollection('projects', ({ id, data }) => id.startsWith(`${lang}/`) && !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const projectHref = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}/${id.replace(`${lang}/`, '')}`);
+
+// Ventanas que tienen botón fijo en la barra de tareas (y opción en Inicio salvo Foto y Tecnologías)
+const fixed = [
+  { id: 'sobre-mi', icon: 'notepad' as const, label: t('nav.about') },
+  { id: 'foto', icon: 'paint' as const, label: t('photo.short') },
+  { id: 'tecnologias', icon: 'folder' as const, label: t('tech.short') },
+  { id: 'contacto', icon: 'mail' as const, label: t('nav.contact') },
+  { id: 'redes', icon: 'globe' as const, label: t('redes.title') },
 ];
+const inStart = fixed.filter((w) => ['sobre-mi', 'contacto', 'redes'].includes(w.id));
 ---
 
 <nav class="taskbar" aria-label={t('nav.label')}>
@@ -36,46 +50,122 @@ const sections = [
   </button>
 
   <div id="start-menu" class="start-menu" popover>
-    <ul>
-      {sections.map((s) => (
-        <li><a href={s.href} data-open={s.open}><Icon name={s.icon} size={32} />{s.label}</a></li>
-      ))}
-      <li class="start-menu__sep">
-        <a href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="book" size={32} />{t('nav.how')}</a>
+    <ul class="menu">
+      <li>
+        <button class="menu__item" type="button" aria-expanded="false" aria-controls="sub-projects">
+          <Icon name="folder" size={24} /><span>{t('menu.projects')}</span><span class="menu__arrow" aria-hidden="true"></span>
+        </button>
+        <ul class="submenu" id="sub-projects" hidden>
+          {
+            projects.map((p) => (
+              <li>
+                <a class="menu__item" href={projectHref(p.id)}>
+                  <Icon name={p.data.icon} size={24} /><span>{p.data.iconLabel ?? p.data.title}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </li>
+      {
+        inStart.map((w) => (
+          <li>
+            <a class="menu__item" href={`${home}#${w.id}`} data-open={w.id}>
+              <Icon name={w.icon} size={24} /><span>{w.label}</span>
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a class="menu__item" href={howHref} aria-current={onHow ? 'page' : undefined}>
+          <Icon name="book" size={24} /><span>{t('nav.how')}</span>
+        </a>
+      </li>
+      <li class="menu__sep" aria-hidden="true"></li>
+      <li class="menu__pc">
+        <button class="menu__item" type="button" aria-expanded="false" aria-controls="sub-extras">
+          <Icon name="cd" size={24} /><span>{t('menu.extras')}</span><span class="menu__arrow" aria-hidden="true"></span>
+        </button>
+        <ul class="submenu submenu--up" id="sub-extras" hidden>
+          <li>
+            <a class="menu__item" href={`${home}#escuchando`} data-open="escuchando">
+              <Icon name="cd" size={24} /><span>{t('menu.music')}</span>
+            </a>
+          </li>
+          <li>
+            <a class="menu__item" href={`${home}#aviso-info`} data-open-group="aviso-">
+              <Icon name="warning" size={24} /><span>{t('menu.alerts')}</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="menu__pc">
+        <button class="menu__item" type="button" data-action="reset">
+          <Icon name="windows" size={24} /><span>{t('desk.resetHint')}</span>
+        </button>
+      </li>
+      <li>
+        <a class="menu__item" href={alternatePath(Astro.url, other)} hreflang={other} lang={other}>
+          <Icon name="globe" size={24} /><span>{languages[other]}</span>
+        </a>
+      </li>
+      <li>
+        <button
+          class="menu__item"
+          type="button"
+          data-theme-toggle
+          data-to-light={t('theme.toLight')}
+          data-to-dark={t('theme.toDark')}
+          data-short-light={t('menu.theme.light')}
+          data-short-dark={t('menu.theme.dark')}
+        >
+          <span class="th-moon"><Icon name="moon" size={24} /></span>
+          <span class="th-sun"><Icon name="sun" size={24} /></span>
+          <span class="theme-label">{t('menu.theme.dark')}</span>
+        </button>
       </li>
     </ul>
   </div>
 
-  <!-- Sin JS o en móvil: enlaces a las secciones -->
-  <ul class="tasks tasks--links">
-    {sections.map((s) => (
-      <li><a class="task" href={s.href} data-open={s.open}><Icon name={s.icon} size={16} /><span>{s.label}</span></a></li>
-    ))}
-    <li>
-      <a class="task" href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="book" size={16} /><span>{t('nav.how')}</span></a>
-    </li>
+  <!-- Botones fijos de ventana (solo PC con JS) -->
+  <ul class="tasks" aria-label={t('desk.windows')}>
+    {
+      fixed.map((w) => (
+        <li>
+          <a class="task" href={`${home}#${w.id}`} data-toggle={w.id}>
+            <Icon name={w.icon} size={16} /><span>{w.label}</span>
+          </a>
+        </li>
+      ))
+    }
   </ul>
 
-  <!-- PC con JS: un botón por ventana abierta (los crea windowManager.ts) -->
-  <ul class="tasks tasks--windows" data-tasks aria-label={t('desk.windows')}></ul>
-
-  <button class="task task--reset" type="button" data-action="reset" title={t('desk.resetHint')} aria-label={t('desk.resetHint')}>
-    <Icon name="folder" size={16} /><span>{t('desk.reset')}</span>
-  </button>
-
   <div class="tray">
+    <span class="tray__extras">
+      <button class="tray__btn" type="button" data-action="reset" aria-label={t('tray.reset')} title={t('tray.reset')}>
+        <Icon name="windows" size={16} />
+      </button>
+      <button class="tray__btn" type="button" data-toggle="escuchando" aria-pressed="false" aria-label={t('tray.music')} title={t('tray.music')}>
+        <Icon name="cd" size={16} />
+      </button>
+      <button class="tray__btn" type="button" data-toggle-group="aviso-" aria-pressed="false" aria-label={t('tray.alerts')} title={t('tray.alerts')}>
+        <Icon name="warning" size={16} />
+      </button>
+    </span>
+    <span class="tray__sep" aria-hidden="true"></span>
     <a class="tray__btn" href={alternatePath(Astro.url, other)} hreflang={other} lang={other} aria-label={t('lang.switch')}>
       <Icon name="globe" size={16} />{t('lang.short')}
     </a>
     <button
-      class="tray__btn theme-toggle"
+      class="tray__btn"
       type="button"
+      data-theme-toggle
       data-to-light={t('theme.toLight')}
       data-to-dark={t('theme.toDark')}
       aria-label={t('theme.toDark')}
     >
-      <span class="theme-toggle__moon"><Icon name="moon" size={16} /></span>
-      <span class="theme-toggle__sun"><Icon name="sun" size={16} /></span>
+      <span class="th-moon"><Icon name="moon" size={16} /></span>
+      <span class="th-sun"><Icon name="sun" size={16} /></span>
     </button>
     <time class="clock" aria-hidden="true" data-lang={lang}></time>
   </div>
@@ -97,139 +187,194 @@ const sections = [
     box-shadow: inset 0 1px 0 var(--bevel-hi);
   }
 
-  /* Botones biselados (Inicio, tareas, recolocar) */
+  /* Botones biselados (Inicio y ventanas) */
   .start,
   .task {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
-    padding: 0 var(--s-2);
+    padding: 0 var(--s-3);
     font-family: var(--font-ui);
     font-size: var(--text-ui);
     color: var(--taskbar-text);
     text-decoration: none;
+    white-space: nowrap;
     background: var(--window);
     border: 0;
     box-shadow: var(--bevel-out);
     cursor: pointer;
   }
 
-  .start:active,
-  .task:active,
-  .start:has(+ .start-menu:popover-open),
-  .task[aria-pressed='true'] {
-    box-shadow: var(--bevel-in);
-  }
-
-  /* Ventana delantera: hundida y con la trama de puntos de la época */
-  .task[aria-pressed='true'] {
-    background:
-      repeating-conic-gradient(var(--bevel-soft) 0 25%, var(--window) 0 50%) 0 0 / 2px 2px;
-  }
-
   .start {
-    padding-inline: var(--s-3);
     font-size: var(--text-lg);
   }
 
+  .start:active,
+  .task:active,
+  .start:has(+ .start-menu:popover-open) {
+    box-shadow: var(--bevel-in);
+  }
+
+  /* Ventana delantera: botón hundido con la trama de puntos de la época */
+  .task[data-win-state='front'] {
+    box-shadow: var(--bevel-in);
+    background: repeating-conic-gradient(var(--bevel-soft) 0 25%, var(--window) 0 50%) 0 0 / 2px 2px;
+  }
+
+  /* Ventana abierta (detrás o minimizada): barrita azul abajo */
+  .task[data-win-state='open']::after {
+    content: '';
+    position: absolute;
+    inset: auto 6px 3px;
+    height: 3px;
+    background: var(--select);
+  }
+
+  /* ───────── Menú Inicio ───────── */
   .start-menu {
     position: fixed;
     inset: auto auto var(--taskbar-h) 0;
     margin: 0;
     padding: 3px;
-    min-width: 16rem;
+    min-width: 16.5rem;
     max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - var(--taskbar-h));
+    overflow: visible; /* los submenús salen por la derecha */
     color: var(--window-text);
     background: var(--window);
     border: 1px solid var(--window-edge);
     box-shadow: var(--bevel-out);
   }
 
-  .start-menu ul {
+  .menu,
+  .submenu {
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .start-menu a {
+  .menu > li {
+    position: relative;
+  }
+
+  .menu__item {
     display: flex;
     align-items: center;
     gap: var(--s-3);
-    min-height: 2.75rem;
+    width: 100%;
+    min-height: 2.5rem;
     padding: var(--s-1) var(--s-4) var(--s-1) var(--s-2);
     font-family: var(--font-ui);
     font-size: var(--text-lg);
     color: inherit;
+    text-align: start;
     text-decoration: none;
+    background: none;
+    border: 0;
+    cursor: pointer;
   }
 
-  .start-menu a:hover,
-  .start-menu a:focus-visible {
+  .menu__item:hover,
+  .menu__item:focus-visible,
+  .menu__item[aria-expanded='true'] {
     background: var(--select);
     color: #fff;
   }
 
-  .start-menu a[aria-current='page'] {
+  .menu__item[aria-current='page'] > span:not(.menu__arrow) {
     text-decoration: underline;
     text-underline-offset: 0.25em;
   }
 
-  .start-menu__sep {
-    margin-block-start: var(--s-1);
-    padding-block-start: var(--s-1);
-    border-top: 1px solid var(--window-line);
-    box-shadow: inset 0 1px 0 var(--bevel-hi);
+  /* Triángulo de submenú */
+  .menu__arrow {
+    margin-inline-start: auto;
+    width: 0;
+    height: 0;
+    border-block: 5px solid transparent;
+    border-inline-start: 6px solid currentColor;
   }
 
-  /* Listas de tareas: ocultas por defecto, se activan según el modo (ver al final) */
+  .menu__sep {
+    height: 2px;
+    margin: var(--s-1) 2px;
+    box-shadow:
+      inset 0 1px 0 var(--bevel-lo),
+      inset 0 -1px 0 var(--bevel-hi);
+  }
+
+  /* Submenú: a la derecha del menú (PC); el de Extras crece hacia arriba para no salirse por abajo */
+  .submenu {
+    position: absolute;
+    top: -4px;
+    left: calc(100% - 2px);
+    min-width: 14rem;
+    padding: 3px;
+    background: var(--window);
+    border: 1px solid var(--window-edge);
+    box-shadow: var(--bevel-out);
+  }
+
+  .submenu--up {
+    top: auto;
+    bottom: -4px;
+  }
+
+  /* Acciones solo de PC (Extras y Recolocar): ocultas hasta que el gestor de ventanas está activo */
+  .menu__pc {
+    display: none;
+  }
+
+  /* Un solo icono de tema visible: la luna en claro (para ir a oscuro), el sol en oscuro */
+  .th-sun,
+  :global(:root[data-theme='dark']) .th-moon {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .th-sun {
+    display: block;
+  }
+
+  /* ───────── Botones fijos ───────── */
   .tasks {
     display: none;
-    flex: 1;
     align-items: stretch;
     gap: 4px;
-    margin: 0;
-    padding: 0;
+    margin: 0 0 0 4px;
+    padding: 0 0 0 8px;
     list-style: none;
-    min-width: 0;
+    /* Separador visual entre Inicio y los botones fijos */
+    box-shadow: inset 2px 0 0 var(--bevel-lo), inset 3px 0 0 var(--bevel-hi);
   }
 
   .tasks > li {
     display: flex;
-    min-width: 0;
   }
 
-  .tasks--windows > li {
-    flex: 0 1 11rem;
-    min-width: 5rem;
-  }
-
-  .task {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .task > span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tasks--windows .task {
-    flex: 1;
-  }
-
-  .task--reset {
-    display: none;
-  }
-
+  /* ───────── Bandeja ───────── */
   .tray {
     display: flex;
     align-items: center;
-    gap: var(--s-1);
+    gap: 2px;
     margin-inline-start: auto;
     padding: 0 var(--s-2);
     background: var(--window);
     box-shadow: var(--bevel-in);
+  }
+
+  .tray__extras {
+    display: none;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .tray__sep {
+    display: none;
+    align-self: stretch;
+    width: 2px;
+    margin: 4px 4px;
+    box-shadow: inset 1px 0 0 var(--bevel-lo), inset 2px 0 0 var(--bevel-hi);
   }
 
   .tray__btn {
@@ -253,6 +398,11 @@ const sections = [
     background: color-mix(in srgb, var(--window-text) 12%, transparent);
   }
 
+  /* Extra abierto: el icono queda hundido */
+  .tray__btn[aria-pressed='true'] {
+    box-shadow: var(--bevel-in);
+  }
+
   .clock {
     display: none;
     padding-inline: var(--s-2);
@@ -261,48 +411,57 @@ const sections = [
     font-variant-numeric: tabular-nums;
   }
 
-  /* Un solo icono de tema visible: la luna en claro (para ir a oscuro), el sol en oscuro */
-  .theme-toggle__sun,
-  :global(:root[data-theme='dark']) .theme-toggle__moon {
-    display: none;
-  }
-
-  :global(:root[data-theme='dark']) .theme-toggle__sun {
-    display: block;
-  }
-
-  /* PC (el mismo criterio que el gestor de ventanas): enlaces sin JS, botones de ventana con JS */
-  @media (min-width: 52rem) and (min-height: 34rem) {
-    :global(html:not(.wm)) .tasks--links,
-    :global(html:has(.window--page)) .tasks--links {
-      display: flex;
-    }
-
-    :global(html.wm:not(:has(.window--page))) .tasks--windows {
-      display: flex;
-    }
-
-    :global(html.wm:not(:has(.window--page))) .task--reset {
-      display: inline-flex;
-    }
-
+  /* ───────── Modo PC con gestor de ventanas activo (mismo criterio que desktop.css) ───────── */
+  @media (min-width: 76rem) and (min-height: 38rem) {
     .clock {
       display: block;
+    }
+
+    :global(html.wm:not(:has(.window--page))) .tasks {
+      display: flex;
+    }
+
+    :global(html.wm:not(:has(.window--page))) .tray__extras {
+      display: flex;
+    }
+
+    :global(html.wm:not(:has(.window--page))) .tray__sep {
+      display: block;
+    }
+
+    :global(html.wm:not(:has(.window--page))) .menu__pc {
+      display: list-item;
+    }
+  }
+
+  /* ───────── Modo apps (móvil): el submenú se despliega en vertical, dentro del menú ───────── */
+  @media (max-width: 75.99rem), (max-height: 37.99rem) {
+    .submenu {
+      position: static;
+      min-width: 0;
+      padding: 0 0 0 var(--s-5);
+      border: 0;
+      box-shadow: none;
     }
   }
 </style>
 
 <script>
   const root = document.documentElement;
-  const toggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
+  const menu = document.getElementById('start-menu');
 
-  function syncLabel() {
-    if (!toggle) return;
+  /* ── Tema (hay un botón en la bandeja y otro en el menú Inicio) ── */
+  function syncTheme() {
     const dark = root.dataset.theme === 'dark';
-    toggle.setAttribute('aria-label', (dark ? toggle.dataset.toLight : toggle.dataset.toDark) ?? '');
+    document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((b) => {
+      b.setAttribute('aria-label', (dark ? b.dataset.toLight : b.dataset.toDark) ?? '');
+      const label = b.querySelector('.theme-label');
+      if (label) label.textContent = (dark ? b.dataset.shortLight : b.dataset.shortDark) ?? '';
+    });
   }
 
-  toggle?.addEventListener('click', () => {
+  document.addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('[data-theme-toggle]')) return;
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     root.dataset.theme = next;
     try {
@@ -310,15 +469,53 @@ const sections = [
     } catch {
       /* modo privado: el tema solo dura esta visita */
     }
-    syncLabel();
+    syncTheme();
   });
-  syncLabel();
+  syncTheme();
 
-  // El menú Inicio se cierra al elegir una opción (los enlaces #ancla no recargan la página).
-  const menu = document.getElementById('start-menu');
-  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.hidePopover()));
+  /* ── Menú Inicio: submenús tipo "disclosure" (botón con aria-expanded) ── */
+  function closeSubs(except?: Element) {
+    menu?.querySelectorAll<HTMLButtonElement>('button[aria-controls][aria-expanded="true"]').forEach((b) => {
+      if (b === except) return;
+      b.setAttribute('aria-expanded', 'false');
+      const sub = document.getElementById(b.getAttribute('aria-controls') ?? '');
+      if (sub) sub.hidden = true;
+    });
+  }
 
-  // Reloj decorativo (se oculta a lectores de pantalla)
+  menu?.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const toggle = target.closest<HTMLButtonElement>('button[aria-controls]');
+    if (toggle) {
+      const wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+      closeSubs();
+      const sub = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+      if (!wasOpen && sub) {
+        toggle.setAttribute('aria-expanded', 'true');
+        sub.hidden = false;
+      }
+      return;
+    }
+    // Elegir cualquier opción cierra el menú (los enlaces #ancla no recargan la página)
+    if (target.closest('a, button')) menu.hidePopover();
+  });
+
+  // Esc dentro de un submenú abierto: cierra solo el submenú y devuelve el foco a su botón
+  menu?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = menu.querySelector<HTMLButtonElement>('button[aria-controls][aria-expanded="true"]');
+    if (!open) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSubs();
+    open.focus();
+  });
+
+  menu?.addEventListener('toggle', (e) => {
+    if ((e as ToggleEvent).newState === 'closed') closeSubs();
+  });
+
+  /* ── Reloj decorativo (se oculta a lectores de pantalla) ── */
   const clock = document.querySelector<HTMLTimeElement>('.clock');
   function tick() {
     if (clock) clock.textContent = new Date().toLocaleTimeString(clock.dataset.lang, { hour: '2-digit', minute: '2-digit' });
