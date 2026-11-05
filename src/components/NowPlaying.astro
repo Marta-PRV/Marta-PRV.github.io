@@ -1,0 +1,120 @@
+---
+// "Escuchando ahora": reproductor decorativo con ecualizador pixel. No reproduce
+// audio (ver src/data/nowPlaying.ts). El ecualizador y la marquesina son CSS puro
+// y se quedan quietos con `prefers-reduced-motion`.
+import Window from './Window.astro';
+import PlayerKeys from './PlayerKeys.astro';
+import { nowPlaying } from '../data/nowPlaying';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  title: string;
+  lang: Lang;
+  index?: number;
+}
+
+const { title, lang, index = 0 } = Astro.props;
+
+// 12 barras: "reposo" = altura fija cuando no hay movimiento; --d = duración distinta para que no vayan a la par
+const bars = Array.from({ length: 12 }, (_, i) => ({
+  rest: [45, 70, 55, 85, 40, 65, 90, 50, 75, 35, 60, 80][i],
+  dur: 520 + ((i * 137) % 480),
+  delay: -((i * 211) % 900),
+}));
+---
+
+<Window title={title} id="escuchando" icon="cd" index={index} class="nowplaying">
+  <div class="lcd">
+    <p class="track"><span>{nowPlaying.title[lang]}</span></p>
+    <span class="time" aria-hidden="true">{nowPlaying.time}</span>
+  </div>
+  <div class="eq" aria-hidden="true">
+    {bars.map((b) => <span style={`--rest:${b.rest}%;--dur:${b.dur}ms;--delay:${b.delay}ms`} />)}
+  </div>
+  <div class="deck"><PlayerKeys /></div>
+</Window>
+
+<style>
+  .lcd {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 2px var(--s-2);
+    color: #7dff9a;
+    background: #07140d;
+    box-shadow: var(--bevel-in);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+
+  .track {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .track span {
+    display: inline-block;
+  }
+
+  .time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Ecualizador de segmentos: cada barra se "recorta" desde arriba (clip-path), así los píxeles no se deforman */
+  .eq {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    height: 3.5rem;
+    margin-block: var(--s-2);
+    padding: 3px;
+    background: #07140d;
+    box-shadow: var(--bevel-in);
+  }
+
+  .eq span {
+    flex: 1;
+    background:
+      repeating-linear-gradient(to top, transparent 0 1px, #07140d 1px 3px),
+      linear-gradient(to top, #38d66b 0 55%, #e6d84a 55% 80%, #e8504a 80%);
+    clip-path: inset(calc(100% - var(--rest)) 0 0 0);
+  }
+
+  .deck {
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .eq span {
+      animation: eq var(--dur) steps(7, end) var(--delay) infinite alternate;
+    }
+
+    .track span {
+      padding-inline-start: 100%;
+      animation: marquee 14s linear infinite;
+    }
+
+    .track {
+      text-overflow: clip;
+    }
+  }
+
+  @keyframes eq {
+    from {
+      clip-path: inset(85% 0 0 0);
+    }
+    to {
+      clip-path: inset(5% 0 0 0);
+    }
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+</style>

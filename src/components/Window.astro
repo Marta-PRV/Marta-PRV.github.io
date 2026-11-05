@@ -1,15 +1,19 @@
 ---
-// Ventana retro compacta. Es un <article> o <section> normal con su título como
-// encabezado (así los lectores de pantalla navegan por ella). Los botones de la
-// barra son decoración, salvo el de cerrar cuando se pasa `closeHref`: entonces
-// es un enlace real de vuelta al escritorio.
+// Ventana estilo Windows 98 (original, sin marcas). Es un <article> o <section>
+// normal con su título como encabezado, así que los lectores de pantalla
+// navegan por ella. Controles de la barra:
+//  - minimizar y maximizar son <button> y solo aparecen cuando el gestor de
+//    ventanas (windowManager.ts) está activo: sin JS no existen, para no dejar
+//    botones muertos;
+//  - cerrar es siempre un enlace real: a `closeHref` (p. ej. el escritorio) o a
+//    "#" (en móvil, quitar el #ancla cierra la "app"). El gestor lo intercepta en PC.
 import Icon from './Icon.astro';
 import type { IconName } from './icons';
-import { getLangFromUrl, localePath, useTranslations } from '../i18n/utils';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
 interface Props {
   title: string;
-  /** Id del encabezado (para aria-labelledby y para enlaces tipo #proyectos). */
+  /** Id de la ventana: es el ancla (#id), el hueco para :target en móvil y el nombre que usa el gestor. */
   id: string;
   icon?: IconName;
   /** Nivel del encabezado del título: h2 para ventanas de sección, h3 si va dentro de otra. */
@@ -17,8 +21,12 @@ interface Props {
   as?: 'article' | 'section';
   /** Quita el relleno del cuerpo (útil para vídeo o imagen a sangre). */
   flush?: boolean;
-  /** Si se indica, el botón de cerrar es un enlace a esta ruta (p. ej. el escritorio). */
+  /** Ruta a la que lleva el botón de cerrar. Por defecto, "#". */
   closeHref?: string;
+  /** Si el gestor puede arrastrarla, minimizarla, etc. Los diálogos de página (proyecto) la desactivan. */
+  draggable?: boolean;
+  /** Ventana de página que se abre encima de todo: role="dialog" modal (el resto queda inerte). */
+  dialog?: boolean;
   /** Posición en la cascada de apertura (cada paso añade ~70 ms de retraso). */
   index?: number;
   class?: string;
@@ -32,28 +40,42 @@ const {
   as: Tag = 'section',
   flush = false,
   closeHref,
+  draggable = true,
+  dialog = false,
   index = 0,
   class: className,
 } = Astro.props;
 const Heading = level;
-const lang = getLangFromUrl(Astro.url);
-const closeLabel = useTranslations(lang)('window.close');
-const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1l6 6M7 1L1 7" stroke="#fff" stroke-width="1.6" /></svg>';
+const t = useTranslations(getLangFromUrl(Astro.url));
 ---
 
-<Tag class:list={['window', className]} aria-labelledby={id} style={`--i:${index}`}>
-  <div class="window__bar">
+<Tag
+  class:list={['window', className]}
+  id={id}
+  aria-labelledby={`${id}-title`}
+  data-window={id}
+  data-state="open"
+  role={dialog ? 'dialog' : undefined}
+  aria-modal={dialog ? 'true' : undefined}
+  data-draggable={draggable ? '' : undefined}
+  style={`--i:${index}`}
+>
+  <div class="window__bar" data-drag>
     <Icon name={icon} size={16} />
-    <Heading class="window__title" id={id}>{title}</Heading>
+    <Heading class="window__title" id={`${id}-title`}>{title}</Heading>
+    {(draggable || closeHref) && (
     <span class="window__controls">
-      <span class="ctl" aria-hidden="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="5" width="5" height="2" fill="#fff" /></svg></span>
-      <span class="ctl" aria-hidden="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1h6v6H1z" fill="none" stroke="#fff" stroke-width="1.5" /></svg></span>
-      {closeHref ? (
-        <a class="ctl ctl--close ctl--link" href={closeHref} aria-label={closeLabel} set:html={closeX} />
-      ) : (
-        <span class="ctl ctl--close" aria-hidden="true" set:html={closeX} />
-      )}
+      <button class="ctl" type="button" data-action="minimize" aria-label={t('window.minimize')}>
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="6" width="5" height="2" fill="currentColor" /></svg>
+      </button>
+      <button class="ctl" type="button" data-action="maximize" aria-label={t('window.maximize')}>
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="M0.5 0.5h7v7h-7z" fill="none" stroke="currentColor" /><rect x="0" y="0" width="8" height="2" fill="currentColor" /></svg>
+      </button>
+      <a class="ctl ctl--close" data-action="close" href={closeHref ?? '#'} aria-label={t('window.close')}>
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.6" /></svg>
+      </a>
     </span>
+    )}
   </div>
   <slot name="menu" />
   <div class:list={['window__body', { 'window__body--flush': flush }]}>
@@ -63,23 +85,32 @@ const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 
 
 <style>
   .window {
-    /* Marco azul de 3px a los lados y abajo, como las ventanas de la época */
-    background: var(--titlebar-a);
-    padding: 0 3px 3px;
-    border-radius: var(--radius-window) var(--radius-window) 3px 3px;
-    box-shadow: var(--shadow-window);
+    display: flex;
+    flex-direction: column;
     min-width: 0;
+    padding: 3px;
+    color: var(--window-text);
+    background: var(--window);
+    border: 1px solid var(--window-edge);
+    border-radius: var(--radius-window);
+    box-shadow: var(--bevel-out);
   }
 
   .window__bar {
     display: flex;
+    flex: none;
     align-items: center;
     gap: var(--s-2);
     min-height: var(--bar-h);
-    padding: 0 var(--s-1) 0 var(--s-2);
+    padding: 2px 3px;
     color: var(--titlebar-text);
-    background: linear-gradient(to bottom, var(--titlebar-b), var(--titlebar-a));
-    border-radius: calc(var(--radius-window) - 1px) calc(var(--radius-window) - 1px) 0 0;
+    /* Degradado horizontal de dos tonos (azul marino -> azul), como la barra clásica */
+    background: linear-gradient(to right, var(--titlebar-a), var(--titlebar-b));
+  }
+
+  /* El gestor marca las ventanas que no están delante: barra gris */
+  .window[data-inactive] .window__bar {
+    background: linear-gradient(to right, var(--titlebar-off-a), var(--titlebar-off-b));
   }
 
   .window__title {
@@ -92,7 +123,6 @@ const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.4);
   }
 
   .window__controls {
@@ -100,40 +130,65 @@ const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 
     gap: 2px;
   }
 
+  /* Botón biselado; se hunde al pulsarlo */
   .ctl {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 1.125rem;
+    width: 1.25rem;
     height: 1.125rem;
-    background: var(--titlebar-b);
-    border: 1px solid #fff;
-    border-radius: 3px;
+    padding: 0;
+    color: var(--window-text);
+    background: var(--window);
+    border: 0;
+    box-shadow: var(--bevel-out);
+    cursor: pointer;
+  }
+
+  /* Zona de clic ampliada (objetivo mínimo de 24px) sin cambiar el aspecto */
+  .ctl::after {
+    content: '';
+    position: absolute;
+    inset: -3px -2px;
+  }
+
+  .ctl:active {
+    box-shadow: var(--bevel-in);
   }
 
   .ctl :global(svg) {
-    width: 0.4375rem;
-    height: 0.4375rem;
+    width: 0.5rem;
+    height: 0.5rem;
   }
 
   .ctl--close {
-    background: #d9402a;
+    margin-inline-start: 2px;
   }
 
-  /* El enlace de cerrar conserva el tamaño visual pero amplía su zona táctil */
-  .ctl--link {
-    position: relative;
+  /* Las ventanas de página (no arrastrables) solo tienen el botón de cerrar */
+  .window:not([data-draggable]) .ctl:not(.ctl--close) {
+    display: none;
   }
 
-  .ctl--link::after {
-    content: '';
-    position: absolute;
-    inset: -0.5rem;
+  /* El título recibe el foco al abrir una ventana (para lectores de pantalla), pero no es interactivo: sin recuadro */
+  .window__title:focus {
+    outline: none;
+  }
+
+  /* Minimizar y maximizar solo existen con el gestor de ventanas activo (html.wm), y no en el modo "apps" de móvil */
+  :global(html:not(.wm)) .ctl:not(.ctl--close) {
+    display: none;
   }
 
   .window__body {
+    flex: 1;
+    min-height: 0;
     padding: var(--s-4);
-    background: var(--window);
+    overflow: auto;
+    overscroll-behavior: contain;
     color: var(--window-text);
+    background: var(--window);
+    scrollbar-color: var(--window-line) var(--window);
   }
 
   .window__body--flush {
@@ -143,7 +198,7 @@ const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 
   /* En pantallas estrechas solo queda el botón de cerrar: más sitio para el título */
   @media (max-width: 30rem) {
     .ctl:not(.ctl--close) {
-      display: none;
+      display: none !important;
     }
   }
 
@@ -158,11 +213,11 @@ const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 
   @keyframes window-open {
     from {
       opacity: 0;
-      transform: scale(0.97);
+      scale: 0.97;
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      scale: 1;
     }
   }
 </style>

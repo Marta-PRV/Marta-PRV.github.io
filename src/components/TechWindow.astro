@@ -29,7 +29,7 @@ const { title, index = 0 } = Astro.props;
 <style>
   .tech {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
     gap: var(--s-3) var(--s-1);
     margin: 0;
     padding: 0;
@@ -52,9 +52,9 @@ const { title, index = 0 } = Astro.props;
   }
 
   .tech__name {
-    padding: 1px 3px;
+    padding: 1px 2px;
     font-family: var(--font-ui);
-    font-size: var(--text-sm);
+    font-size: 0.875rem;
     line-height: 1.15;
     overflow-wrap: anywhere;
   }

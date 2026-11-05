@@ -1,0 +1,32 @@
+---
+// Escritorio para páginas con una ventana grande delante (proyecto, "cómo está
+// hecho", error). El escritorio de la portada queda detrás, inerte y oculto a
+// lectores de pantalla (la ventana de página es un diálogo modal).
+import Base from '../layouts/Base.astro';
+import DeskShell from './DeskShell.astro';
+import Desktop from './Desktop.astro';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+}
+
+const { lang, title, description } = Astro.props;
+---
+
+<Base lang={lang} title={title} description={description}>
+  <DeskShell>
+    <div class="behind" inert aria-hidden="true">
+      <Desktop lang={lang} behind />
+    </div>
+    <slot />
+  </DeskShell>
+</Base>
+
+<style>
+  .behind {
+    pointer-events: none;
+  }
+</style>

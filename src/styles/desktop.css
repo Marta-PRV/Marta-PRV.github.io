@@ -1,0 +1,281 @@
+/*
+ * El escritorio: dónde va cada cosa.
+ *
+ * Dos modos, con el MISMO criterio que usa windowManager.ts (DESKTOP_QUERY):
+ *   - PC   (ancho >= 76rem Y alto >= 38rem): collage de ventanas absolutas, arrastrables.
+ *   - Apps (todo lo demás: móvil, tablet, ventanas bajas): sin arrastrar; el escritorio
+ *          es una rejilla de iconos y cada ventana se abre a pantalla completa.
+ *
+ * Posición inicial por CSS (--x, --y, --w); el arrastre solo añade --dx/--dy (propiedad
+ * `translate`, que no pisa a `scale` de la animación de entrada). Así, sin JS, la
+ * portada sale colocada y legible.
+ */
+
+/* La página NUNCA hace scroll: el escritorio ocupa exactamente la pantalla */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  padding: 0;
+}
+
+.desk {
+  position: fixed;
+  inset: 0 0 var(--taskbar-h) 0;
+}
+
+.desk .window[data-draggable] {
+  z-index: 10;
+}
+
+.hint {
+  display: none;
+}
+
+/* ───────────────────────── Modo PC ───────────────────────── */
+@media (min-width: 76rem) and (min-height: 38rem) {
+  .desk {
+    overflow: hidden;
+    /* Origen del collage: deja sitio a la columna de iconos y centra el conjunto en pantallas anchas */
+    --ox: clamp(14rem, calc(50% - 30rem), 26rem);
+  }
+
+  .desk .window[data-draggable] {
+    position: absolute;
+    left: var(--x, 0);
+    top: var(--y, 0);
+    width: var(--w, auto);
+    max-height: calc(100% - 1rem);
+    translate: var(--dx, 0px) var(--dy, 0px);
+  }
+
+  .desk .window[data-draggable][data-state='min'],
+  .desk .window[data-draggable][data-state='closed'] {
+    display: none;
+  }
+
+  /* Maximizada: llena el escritorio */
+  .desk .window[data-max] {
+    left: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none;
+    translate: none;
+  }
+
+  /* Reposicionando ("Recolocar"): el regreso se anima brevemente */
+  .desk .window[data-draggable].is-resetting {
+    transition: translate 250ms var(--ease-out);
+  }
+
+  /* Columna de iconos pegada a la izquierda; pasa a una segunda columna si no caben */
+  .icons {
+    position: absolute;
+    inset: 0.5rem auto 0.5rem 0.5rem;
+    z-index: 0;
+  }
+
+  .icons__list {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(auto-fill, 5.9rem);
+    align-content: start;
+    justify-content: start;
+    gap: 0.25rem;
+    height: 100%;
+  }
+
+  .app-only {
+    display: none;
+  }
+
+  /* ── El collage: posiciones iniciales ── */
+  .desk .window[data-window='foto'] {
+    --x: var(--ox);
+    --y: 1rem;
+    --w: var(--w-photo);
+    z-index: 6;
+  }
+
+  /* El bloc cubre ~3rem de la foto, por debajo de la cara */
+  .desk .window[data-window='sobre-mi'] {
+    --x: calc(var(--ox) + 14.5rem);
+    --y: 9rem;
+    --w: var(--w-notepad);
+    z-index: 9;
+  }
+
+  .desk .window[data-window='tecnologias'] {
+    --x: calc(var(--ox) + 34.5rem);
+    --y: 1rem;
+    --w: var(--w-tech);
+    z-index: 8;
+  }
+
+  .desk .window[data-window='contacto'] {
+    --x: calc(var(--ox) + 37.5rem);
+    --w: var(--w-contact);
+    top: auto;
+    bottom: 3.25rem;
+    z-index: 7;
+  }
+
+  .desk .window[data-window='escuchando'] {
+    --x: var(--ox);
+    --w: var(--w-player);
+    top: auto;
+    bottom: 1rem;
+    z-index: 5;
+  }
+
+  /* Avisos en cascada, abajo a la derecha: el último queda delante */
+  .desk .window[data-window^='aviso-'] {
+    --w: var(--w-alert);
+    left: auto;
+    top: auto;
+  }
+
+  .desk .window[data-window='aviso-info'] {
+    right: 6.5rem;
+    bottom: 6.25rem;
+    z-index: 2;
+  }
+
+  .desk .window[data-window='aviso-error'] {
+    right: 4rem;
+    bottom: 4.5rem;
+    z-index: 3;
+  }
+
+  .desk .window[data-window='aviso-warning'] {
+    right: 1.5rem;
+    bottom: 2.75rem;
+    z-index: 4;
+  }
+
+  /* Decoración: garabato y pegatinas (sin clics, debajo de las ventanas) */
+  /* El garabato solo aparece si hay alto de sobra (con poca altura los iconos usan 2 columnas y chocaría) */
+  .hint {
+    position: absolute;
+    top: 1.25rem;
+    left: 6.5rem;
+    z-index: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    rotate: -5deg;
+    pointer-events: none;
+  }
+
+  .hint :global(.hint__arrow) {
+    scale: -1 1;
+    margin-inline-start: 0.5rem;
+  }
+
+  .sticker--cd {
+    right: 1.5rem;
+    top: 1.25rem;
+  }
+
+  .sticker--pc {
+    left: calc(var(--ox) + 15.5rem);
+    bottom: 0.5rem;
+  }
+
+  .sticker--floppy {
+    right: 20rem;
+    bottom: 0.75rem;
+  }
+
+  /* Barra de título = asa de arrastre (solo con el gestor activo) */
+  :global(html.wm) .window[data-draggable] .window__bar {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  :global(body.is-dragging) {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  :global(body.is-dragging) iframe {
+    pointer-events: none;
+  }
+
+  /* Ventana de página (proyecto, "cómo está hecho", error): grande, centrada, con scroll interno */
+  .desk .window--page {
+    position: fixed;
+    z-index: 500;
+    inset: 1.25rem 1.25rem calc(var(--taskbar-h) + 1.25rem) 1.25rem;
+    width: min(calc(100% - 2.5rem), var(--w-project));
+    height: fit-content;
+    max-height: calc(100dvh - var(--taskbar-h) - 2.5rem);
+    margin: auto;
+    translate: none;
+  }
+
+  .desk .window--page-narrow {
+    width: min(calc(100% - 2.5rem), 46rem);
+  }
+
+  .desk .window--page-small {
+    width: min(calc(100% - 2.5rem), 26rem);
+  }
+}
+
+@media (min-width: 76rem) and (min-height: 46rem) {
+  .hint {
+    display: flex;
+  }
+}
+
+/* ───────────────────────── Modo apps (móvil y pantallas pequeñas) ───────────────────────── */
+@media (max-width: 75.99rem), (max-height: 37.99rem) {
+  .desk {
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: var(--s-4) var(--s-2);
+  }
+
+  /* Rejilla de iconos tipo pantalla de inicio de teléfono (4 columnas en un móvil de 390px) */
+  .icons__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+    justify-items: center;
+    gap: var(--s-2) 0;
+  }
+
+  .hint,
+  .sticker {
+    display: none;
+  }
+
+  /* Las ventanas solo se ven si su #ancla está activa: se abren a pantalla completa, como una app */
+  .desk .window[data-draggable] {
+    display: none;
+  }
+
+  .desk .window[data-draggable]:target,
+  .desk .window--page {
+    display: flex;
+    position: fixed;
+    z-index: 400;
+    inset: 0 0 var(--taskbar-h) 0;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    border-inline: 0;
+    animation-delay: 0ms;
+  }
+
+  .desk .window--page {
+    z-index: 500;
+  }
+}

@@ -10,6 +10,7 @@ import '@fontsource/atkinson-hyperlegible-next/latin-700.css';
 import '@fontsource/permanent-marker/latin-400.css';
 import '../styles/tokens.css';
 import '../styles/global.css';
+import '../styles/desktop.css';
 
 import Hills from '../components/Hills.astro';
 import Taskbar from '../components/Taskbar.astro';
@@ -61,5 +62,27 @@ const alternate = new URL(alternatePath(Astro.url, other), Astro.site);
       <slot />
     </main>
     <Taskbar lang={lang} />
+    <!-- Anti-parpadeo: aplica YA las posiciones guardadas de las ventanas (antes del primer pintado).
+         Es una versión mínima de lo que hace windowManager.ts al arrancar. -->
+    <script is:inline>
+      (function () {
+        try {
+          var saved = JSON.parse(sessionStorage.getItem('desk:v1') || 'null');
+          if (!saved || !matchMedia('(min-width: 76rem) and (min-height: 38rem)').matches) return;
+          for (var id in saved.w) {
+            var el = document.querySelector('.desk .window[data-window="' + id + '"][data-draggable]');
+            if (!el) continue;
+            var st = saved.w[id];
+            el.style.setProperty('--dx', st.dx + 'px');
+            el.style.setProperty('--dy', st.dy + 'px');
+            el.dataset.state = st.s;
+            if (st.m) el.setAttribute('data-max', '');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
+      import '../scripts/windowManager';
+    </script>
   </body>
 </html>

@@ -1,0 +1,53 @@
+---
+// Diálogo de aviso decorativo (humor). Es una ventana normal y arrastrable, con
+// el mensaje y botones cuyo único efecto es cerrarla. NO usa role="alert": no
+// debe interrumpir a un lector de pantalla al cargar la página.
+import Window from './Window.astro';
+import Icon from './Icon.astro';
+import type { Alert } from '../data/alerts';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  alert: Alert;
+  lang: Lang;
+  index?: number;
+}
+
+const { alert, lang, index = 0 } = Astro.props;
+---
+
+<Window title={alert.title[lang]} id={alert.id} icon={alert.icon} index={index} class="alert">
+  <div class="row">
+    <span class="alert__icon"><Icon name={alert.icon} size={32} /></span>
+    <p>{alert.text[lang]}</p>
+  </div>
+  <p class="actions">
+    {alert.buttons[lang].map((label) => <a class="btn" href="#" data-action="close">{label}</a>)}
+  </p>
+</Window>
+
+<style>
+  .row {
+    display: flex;
+    gap: var(--s-3);
+    align-items: flex-start;
+  }
+
+  .alert__icon {
+    flex: none;
+    color: #14172b;
+  }
+
+  .row p {
+    font-size: var(--text-sm);
+    line-height: 1.4;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--s-2);
+    margin-block-start: var(--s-3);
+  }
+</style>

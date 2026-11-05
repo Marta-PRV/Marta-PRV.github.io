@@ -1,8 +1,10 @@
 ---
-// Barra de tareas fija abajo = navegación del sitio. El botón Inicio abre un
-// menú con la API nativa `popover` (sin librerías: cierra con Esc, clic fuera
-// y gestiona el foco por nosotros). Las únicas piezas con JS son el cambio de
-// tema y el reloj decorativo.
+// Barra de tareas fija abajo (gris con bisel, estilo Windows 98) = navegación del sitio.
+//  - Inicio: menú con la API nativa `popover` (Esc, clic fuera y foco los gestiona el navegador).
+//  - Botones de ventanas abiertas: los rellena windowManager.ts en PC (un botón por ventana).
+//  - Sin JS, o en móvil, se ven en su lugar los enlaces a las secciones.
+//  - Recolocar: devuelve las ventanas a su sitio (solo existe con el gestor activo).
+//  - Bandeja: idioma, tema y reloj decorativo.
 import Icon from './Icon.astro';
 import type { Lang } from '../i18n/ui';
 import { alternatePath, localePath, sectionSlug, useTranslations } from '../i18n/utils';
@@ -18,10 +20,12 @@ const home = localePath(lang);
 const howHref = localePath(lang, sectionSlug(lang, 'como-esta-hecho'));
 const onHow = Astro.url.pathname === howHref;
 
+// `open` = id de la ventana: en PC el gestor la abre/trae al frente; en móvil el #ancla la abre a pantalla completa.
 const sections = [
-  { href: `${home}#proyectos`, label: t('nav.projects'), icon: 'folder' as const },
-  { href: `${home}#sobre-mi`, label: t('nav.about'), icon: 'notepad' as const },
-  { href: `${home}#contacto`, label: t('nav.contact'), icon: 'mail' as const },
+  { href: `${home}#proyectos`, label: t('nav.projects'), icon: 'folder' as const, open: undefined },
+  { href: `${home}#sobre-mi`, label: t('nav.about'), icon: 'notepad' as const, open: 'sobre-mi' },
+  { href: `${home}#tecnologias`, label: t('tech.title'), icon: 'folder' as const, open: 'tecnologias' },
+  { href: `${home}#contacto`, label: t('nav.contact'), icon: 'mail' as const, open: 'contacto' },
 ];
 ---
 
@@ -34,22 +38,30 @@ const sections = [
   <div id="start-menu" class="start-menu" popover>
     <ul>
       {sections.map((s) => (
-        <li><a href={s.href}><Icon name={s.icon} size={32} />{s.label}</a></li>
+        <li><a href={s.href} data-open={s.open}><Icon name={s.icon} size={32} />{s.label}</a></li>
       ))}
       <li class="start-menu__sep">
-        <a href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="cd" size={32} />{t('nav.how')}</a>
+        <a href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="book" size={32} />{t('nav.how')}</a>
       </li>
     </ul>
   </div>
 
-  <ul class="tasks">
+  <!-- Sin JS o en móvil: enlaces a las secciones -->
+  <ul class="tasks tasks--links">
     {sections.map((s) => (
-      <li><a class="task" href={s.href}><Icon name={s.icon} size={16} />{s.label}</a></li>
+      <li><a class="task" href={s.href} data-open={s.open}><Icon name={s.icon} size={16} /><span>{s.label}</span></a></li>
     ))}
     <li>
-      <a class="task" href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="cd" size={16} />{t('nav.how')}</a>
+      <a class="task" href={howHref} aria-current={onHow ? 'page' : undefined}><Icon name="book" size={16} /><span>{t('nav.how')}</span></a>
     </li>
   </ul>
+
+  <!-- PC con JS: un botón por ventana abierta (los crea windowManager.ts) -->
+  <ul class="tasks tasks--windows" data-tasks aria-label={t('desk.windows')}></ul>
+
+  <button class="task task--reset" type="button" data-action="reset" title={t('desk.resetHint')} aria-label={t('desk.resetHint')}>
+    <Icon name="folder" size={16} /><span>{t('desk.reset')}</span>
+  </button>
 
   <div class="tray">
     <a class="tray__btn" href={alternatePath(Astro.url, other)} hreflang={other} lang={other} aria-label={t('lang.switch')}>
@@ -73,52 +85,64 @@ const sections = [
   .taskbar {
     position: fixed;
     inset: auto 0 0 0;
-    z-index: 50;
+    z-index: 1000;
     display: flex;
     align-items: stretch;
-    gap: var(--s-2);
+    gap: 4px;
     height: var(--taskbar-h);
+    padding: 3px 4px;
     color: var(--taskbar-text);
-    background: linear-gradient(to bottom, var(--taskbar-b), var(--taskbar-a));
-    border-top: 2px solid color-mix(in srgb, var(--taskbar-b) 70%, #fff);
+    background: var(--window);
+    border-top: 1px solid var(--bevel-soft);
+    box-shadow: inset 0 1px 0 var(--bevel-hi);
   }
 
-  /* Botón Inicio: símbolo propio (sol sobre colinas), no la bandera de Windows */
-  .start {
-    display: flex;
+  /* Botones biselados (Inicio, tareas, recolocar) */
+  .start,
+  .task {
+    display: inline-flex;
     align-items: center;
     gap: var(--s-2);
-    padding: 0 var(--s-4) 0 var(--s-3);
+    padding: 0 var(--s-2);
     font-family: var(--font-ui);
-    font-size: 1.125rem;
-    font-style: italic;
-    color: #fff;
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
-    background: linear-gradient(to bottom, var(--start-b), var(--start-a));
+    font-size: var(--text-ui);
+    color: var(--taskbar-text);
+    text-decoration: none;
+    background: var(--window);
     border: 0;
-    border-radius: 0 14px 14px 0;
-    box-shadow: inset -1px 0 0 rgb(0 0 0 / 0.25);
+    box-shadow: var(--bevel-out);
     cursor: pointer;
-    transition: transform var(--dur-fast) var(--ease-out);
   }
 
-  .start:active {
-    transform: translateY(1px);
+  .start:active,
+  .task:active,
+  .start:has(+ .start-menu:popover-open),
+  .task[aria-pressed='true'] {
+    box-shadow: var(--bevel-in);
+  }
+
+  /* Ventana delantera: hundida y con la trama de puntos de la época */
+  .task[aria-pressed='true'] {
+    background:
+      repeating-conic-gradient(var(--bevel-soft) 0 25%, var(--window) 0 50%) 0 0 / 2px 2px;
+  }
+
+  .start {
+    padding-inline: var(--s-3);
+    font-size: var(--text-lg);
   }
 
   .start-menu {
     position: fixed;
     inset: auto auto var(--taskbar-h) 0;
     margin: 0;
-    padding: var(--s-1);
+    padding: 3px;
     min-width: 16rem;
     max-width: calc(100vw - 1rem);
     color: var(--window-text);
     background: var(--window);
-    border: 3px solid var(--titlebar-a);
-    border-bottom: 0;
-    border-radius: var(--radius-window) var(--radius-window) 0 0;
-    box-shadow: var(--shadow-window);
+    border: 1px solid var(--window-edge);
+    box-shadow: var(--bevel-out);
   }
 
   .start-menu ul {
@@ -131,7 +155,7 @@ const sections = [
     display: flex;
     align-items: center;
     gap: var(--s-3);
-    min-height: 3rem;
+    min-height: 2.75rem;
     padding: var(--s-1) var(--s-4) var(--s-1) var(--s-2);
     font-family: var(--font-ui);
     font-size: var(--text-lg);
@@ -141,7 +165,7 @@ const sections = [
 
   .start-menu a:hover,
   .start-menu a:focus-visible {
-    background: var(--titlebar-a);
+    background: var(--select);
     color: #fff;
   }
 
@@ -154,48 +178,48 @@ const sections = [
     margin-block-start: var(--s-1);
     padding-block-start: var(--s-1);
     border-top: 1px solid var(--window-line);
+    box-shadow: inset 0 1px 0 var(--bevel-hi);
   }
 
-  /* Botones de tarea: solo en pantallas anchas (en móvil todo vive en Inicio) */
+  /* Listas de tareas: ocultas por defecto, se activan según el modo (ver al final) */
   .tasks {
     display: none;
     flex: 1;
-    align-items: center;
-    gap: var(--s-1);
+    align-items: stretch;
+    gap: 4px;
     margin: 0;
-    padding: 0 var(--s-1);
+    padding: 0;
     list-style: none;
     min-width: 0;
   }
 
-  .task {
+  .tasks > li {
     display: flex;
-    align-items: center;
-    gap: var(--s-2);
-    min-height: 2.5rem;
-    padding: 0 var(--s-3);
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-    color: #fff;
-    text-decoration: none;
+    min-width: 0;
+  }
+
+  .tasks--windows > li {
+    flex: 0 1 11rem;
+    min-width: 5rem;
+  }
+
+  .task {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .task > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    background: color-mix(in srgb, #fff 14%, transparent);
-    border: 1px solid color-mix(in srgb, #fff 35%, transparent);
-    border-radius: 3px;
-    transition: transform var(--dur-fast) var(--ease-out);
   }
 
-  .task:hover {
-    background: color-mix(in srgb, #fff 26%, transparent);
+  .tasks--windows .task {
+    flex: 1;
   }
 
-  .task:active {
-    transform: translateY(1px);
-  }
-
-  .task[aria-current='page'] {
-    background: rgb(0 0 0 / 0.25);
-    box-shadow: inset 1px 1px 2px rgb(0 0 0 / 0.4);
+  .task--reset {
+    display: none;
   }
 
   .tray {
@@ -204,8 +228,8 @@ const sections = [
     gap: var(--s-1);
     margin-inline-start: auto;
     padding: 0 var(--s-2);
-    background: color-mix(in srgb, #000 22%, var(--taskbar-a));
-    border-inline-start: 1px solid color-mix(in srgb, #fff 30%, transparent);
+    background: var(--window);
+    box-shadow: var(--bevel-in);
   }
 
   .tray__btn {
@@ -213,21 +237,20 @@ const sections = [
     align-items: center;
     justify-content: center;
     gap: var(--s-1);
-    min-width: 2.75rem;
-    min-height: 2.75rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
     padding: 0 var(--s-2);
     font-family: var(--font-ui);
     font-size: var(--text-sm);
-    color: #fff;
+    color: var(--taskbar-text);
     text-decoration: none;
     background: transparent;
     border: 0;
-    border-radius: 3px;
     cursor: pointer;
   }
 
   .tray__btn:hover {
-    background: color-mix(in srgb, #fff 20%, transparent);
+    background: color-mix(in srgb, var(--window-text) 12%, transparent);
   }
 
   .clock {
@@ -248,10 +271,21 @@ const sections = [
     display: block;
   }
 
-  @media (min-width: 52rem) {
-    .tasks {
+  /* PC (el mismo criterio que el gestor de ventanas): enlaces sin JS, botones de ventana con JS */
+  @media (min-width: 52rem) and (min-height: 34rem) {
+    :global(html:not(.wm)) .tasks--links,
+    :global(html:has(.window--page)) .tasks--links {
       display: flex;
     }
+
+    :global(html.wm:not(:has(.window--page))) .tasks--windows {
+      display: flex;
+    }
+
+    :global(html.wm:not(:has(.window--page))) .task--reset {
+      display: inline-flex;
+    }
+
     .clock {
       display: block;
     }

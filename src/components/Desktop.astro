@@ -1,30 +1,35 @@
 ---
-// La portada: un escritorio de los 2000 ordenado y compacto (sin ventanas
-// arrastrables). Orden de lectura = orden del DOM, que es el mismo en PC y móvil:
-//   1) iconos de proyectos  2) ventanas (foto + bloc, tecnologías, contacto)  3) accesos.
-// En PC (>= 52rem) se colocan en tres columnas; en móvil se apilan y los iconos
-// forman una rejilla tipo pantalla de inicio de teléfono.
+// Contenido del escritorio de la portada: iconos, ventanas, pegatinas y garabato.
+// Cómo se coloca (PC: collage con ventanas absolutas; móvil: rejilla de iconos y
+// ventanas a pantalla completa) está en src/styles/desktop.css.
+// Orden del DOM = orden de Tab: primero los iconos (proyectos y accesos), luego las ventanas.
 import { getCollection } from 'astro:content';
 import DesktopIcon from './DesktopIcon.astro';
 import PaintPhoto from './PaintPhoto.astro';
 import NotepadAbout from './NotepadAbout.astro';
 import TechWindow from './TechWindow.astro';
 import ContactWindow from './ContactWindow.astro';
+import NowPlaying from './NowPlaying.astro';
+import AlertDialog from './AlertDialog.astro';
+import Sticker from './Sticker.astro';
+import Scribble from './Scribble.astro';
 import marta from '../assets/marta.jpg';
 import { about } from '../data/about';
+import { alerts } from '../data/alerts';
 import { shortcuts } from '../data/shortcuts';
 import type { Lang } from '../i18n/ui';
 import { localePath, sectionSlug, useTranslations } from '../i18n/utils';
 
 interface Props {
   lang: Lang;
+  /** true cuando va detrás de una ventana de página (proyecto): sin h1 duplicado ni animación de entrada. */
+  behind?: boolean;
 }
 
-const { lang } = Astro.props;
+const { lang, behind = false } = Astro.props;
 const t = useTranslations(lang);
 const text = about[lang];
 
-// Proyectos del idioma actual, ordenados por `order` (menor = más arriba).
 const projects = (await getCollection('projects', ({ id, data }) => id.startsWith(`${lang}/`) && !data.draft)).sort(
   (a, b) => a.data.order - b.data.order,
 );
@@ -35,13 +40,20 @@ function shortcutHref(s: (typeof shortcuts)[number]) {
   if (s.kind === 'anchor') return `${localePath(lang)}#${s.target}`;
   return localePath(lang, sectionSlug(lang, s.target as 'como-esta-hecho'));
 }
+
+// Iconos que solo existen en el modo móvil: abren las ventanas de la portada como "apps".
+const apps = [
+  { id: 'sobre-mi', icon: 'notepad' as const, label: t('nav.about') },
+  { id: 'tecnologias', icon: 'folder' as const, label: t('tech.short') },
+  { id: 'foto', icon: 'paint' as const, label: t('photo.short') },
+];
 ---
 
-<div class="page desktop">
-  <h1 class="visually-hidden">{t('home.h1')}</h1>
+<div class:list={['desktop', { 'desktop--behind': behind }]}>
+  {behind ? <p class="visually-hidden">{t('home.h1')}</p> : <h1 class="visually-hidden">{t('home.h1')}</h1>}
 
-  <section class="icons" id="proyectos" aria-labelledby="h-proyectos">
-    <h2 class="visually-hidden" id="h-proyectos">{t('nav.projects')}</h2>
+  <section class="icons" id="proyectos" aria-labelledby="h-iconos">
+    <h2 class="visually-hidden" id="h-iconos">{t('desk.icons')}</h2>
     <ul class="icons__list">
       {
         projects.map((p) => (
@@ -50,136 +62,72 @@ function shortcutHref(s: (typeof shortcuts)[number]) {
           </li>
         ))
       }
-    </ul>
-  </section>
-
-  <div class="stage">
-    <div class="cluster">
-      <div class="cluster__photo">
-        <PaintPhoto title={t('photo.title')} id="foto" image={marta} alt={t('photo.alt')} index={0} />
-      </div>
-      <div class="cluster__note">
-        <NotepadAbout title={t('about.title')} id="sobre-mi" index={1}>
-          <p class="note-name">{text.name}</p>
-          {text.paragraphs.map((p) => <p>{p}</p>)}
-        </NotepadAbout>
-      </div>
-    </div>
-    <div class="stage__tech"><TechWindow title={t('tech.title')} index={2} /></div>
-    <div class="stage__contact"><ContactWindow index={3} /></div>
-  </div>
-
-  <section class="icons" aria-labelledby="h-accesos">
-    <h2 class="visually-hidden" id="h-accesos">{t('home.shortcuts')}</h2>
-    <ul class="icons__list">
+      {
+        apps.map((a) => (
+          <li class="app-only">
+            <DesktopIcon href={`#${a.id}`} label={a.label} icon={a.icon} />
+          </li>
+        ))
+      }
       {
         shortcuts.map((s) => (
           <li>
-            <DesktopIcon href={shortcutHref(s)} label={s.label[lang]} icon={s.icon} external={s.kind === 'external'} />
+            <DesktopIcon
+              href={shortcutHref(s)}
+              label={s.label[lang]}
+              icon={s.icon}
+              external={s.kind === 'external'}
+              open={s.kind === 'anchor' ? s.target : undefined}
+            />
           </li>
         ))
       }
     </ul>
   </section>
+
+  <!-- Decoración (solo PC): garabato que señala los iconos y pegatinas sueltas -->
+  <p class="hint" aria-hidden="true">
+    <Scribble kind="arrow" width={64} class="hint__arrow" />
+    <span>{t('desk.hint')}</span>
+  </p>
+  <Sticker icon="cd" size={64} rotate={-8} class="sticker--cd" />
+  <Sticker icon="computer" size={64} rotate={6} class="sticker--pc" />
+  <Sticker icon="floppy" size={48} rotate={-5} class="sticker--floppy" />
+
+  <PaintPhoto title={t('photo.title')} id="foto" image={marta} alt={t('photo.alt')} index={0} />
+  <NotepadAbout title={t('about.title')} id="sobre-mi" index={1}>
+    <p class="note-name">{text.name}</p>
+    {text.paragraphs.map((p) => <p>{p}</p>)}
+  </NotepadAbout>
+  <TechWindow title={t('tech.title')} index={2} />
+  <ContactWindow index={3} />
+  <NowPlaying title={t('player.title')} lang={lang} index={4} />
+  {alerts.map((a, i) => <AlertDialog alert={a} lang={lang} index={5 + i} />)}
 </div>
 
 <style>
-  .desktop {
-    display: grid;
-    gap: var(--s-5);
-    align-items: start;
-    padding-block: var(--s-5) var(--s-6);
-  }
-
-  /* Rejilla tipo pantalla de inicio: tantas columnas como quepan (4 en un móvil de 390px) */
-  .icons__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
-    justify-items: center;
-    gap: var(--s-2) 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .stage {
-    display: grid;
-    gap: var(--s-5);
-    min-width: 0;
-  }
-
-  /* Móvil: foto y bloc se solapan poco (~1.25rem) y se desplazan en lados opuestos */
-  .cluster {
-    display: grid;
-  }
-
-  .cluster__photo {
-    width: min(78%, var(--w-photo));
-  }
-
-  .cluster__note {
-    position: relative;
-    z-index: 2;
-    justify-self: end;
-    width: min(94%, var(--w-notepad));
-    margin-block-start: -1.25rem;
-  }
-
-  .stage__tech {
-    width: min(100%, var(--w-tech));
-  }
-
-  .stage__contact {
-    width: min(100%, var(--w-contact));
-  }
-
   .note-name {
     font-family: var(--font-ui);
     font-size: var(--text-xl);
     line-height: 1.1;
   }
 
-  /* PC: tres zonas. El bloc cubre ~3rem de la foto, por debajo de la cara */
-  @media (min-width: 52rem) {
-    .desktop {
-      grid-template-columns: 7rem minmax(0, 1fr) 7rem;
-      gap: var(--s-6);
-    }
+  .icons__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 
-    .icons__list {
-      grid-template-columns: 1fr;
-      justify-items: start;
-    }
+  .hint span {
+    font-family: var(--font-marker);
+    font-size: 1.25rem;
+    color: var(--ink);
+    text-shadow: 0 1px 0 rgb(255 255 255 / 0.5);
+    white-space: nowrap;
+  }
 
-    .stage {
-      justify-self: center;
-    }
-
-    .cluster {
-      width: calc(var(--w-photo) + var(--w-notepad) - 3rem);
-    }
-
-    .cluster__photo,
-    .cluster__note {
-      grid-area: 1 / 1;
-    }
-
-    .cluster__photo {
-      width: var(--w-photo);
-    }
-
-    .cluster__note {
-      justify-self: end;
-      width: var(--w-notepad);
-      margin-block-start: 8.5rem;
-    }
-
-    .stage__tech {
-      margin-inline-start: 2.5rem;
-    }
-
-    .stage__contact {
-      margin-inline-start: 8rem;
-    }
+  /* Detrás de una ventana de página no se repite la animación de entrada */
+  .desktop--behind :global(.window) {
+    animation: none;
   }
 </style>

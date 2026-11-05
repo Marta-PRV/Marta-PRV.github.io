@@ -1,37 +1,37 @@
 ---
-// 404 como ventana de error de la época. Bilingüe porque GitHub Pages sirve
-// un único 404.html para todo el sitio.
-import Base from '../layouts/Base.astro';
+// 404 como ventana de error de la época, sobre el escritorio. Bilingüe porque
+// GitHub Pages sirve un único 404.html para todo el sitio.
+import PageDesk from '../components/PageDesk.astro';
 import Window from '../components/Window.astro';
 import Icon from '../components/Icon.astro';
 ---
 
-<Base lang="es" title="Página no encontrada · Marta Prieto" description="La página que buscas no existe.">
-  <div class="page">
-    <div class="error">
-      <Window title="Error — 404" id="error-404" icon="warning" level="h1">
-        <div class="error__row">
-          <Icon name="warning" size={48} />
-          <div class="error__text">
-            <p>No se encuentra la página que buscas.</p>
-            <p lang="en">The page you are looking for cannot be found.</p>
-          </div>
-        </div>
-        <p class="error__actions">
-          <a class="btn" href="/">Aceptar</a>
-          <a class="btn" href="/en/" hreflang="en" lang="en">Go to English site</a>
-        </p>
-      </Window>
+<PageDesk lang="es" title="Página no encontrada · Marta Prieto" description="La página que buscas no existe.">
+  <Window
+    title="Error — 404"
+    id="error-404"
+    icon="warning"
+    level="h1"
+    closeHref="/"
+    class="window--page window--page-small"
+    dialog
+    draggable={false}
+  >
+    <div class="error__row">
+      <Icon name="warning" size={48} />
+      <div class="error__text">
+        <p>No se encuentra la página que buscas.</p>
+        <p lang="en">The page you are looking for cannot be found.</p>
+      </div>
     </div>
-  </div>
-</Base>
+    <p class="error__actions">
+      <a class="btn" href="/">Aceptar</a>
+      <a class="btn" href="/en/" hreflang="en" lang="en">Go to English site</a>
+    </p>
+  </Window>
+</PageDesk>
 
 <style>
-  .error {
-    width: min(100%, 26rem);
-    margin: var(--s-7) auto 0;
-  }
-
   .error__row {
     display: flex;
     gap: var(--s-4);

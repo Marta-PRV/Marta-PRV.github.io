@@ -2,6 +2,7 @@
 // Página "Cómo está hecho": explica las decisiones de diseño y técnicas reales
 // de este portfolio. Cada frase describe algo que ya existe en el código.
 import NotepadAbout from './NotepadAbout.astro';
+import PageDesk from './PageDesk.astro';
 import type { Lang } from '../i18n/ui';
 import { localePath, useTranslations } from '../i18n/utils';
 
@@ -17,9 +18,12 @@ interface Section {
   items: string[];
 }
 
-const content: Record<Lang, { title: string; intro: string; sections: Section[] }> = {
+const content: Record<Lang, { title: string; heading: string; description: string; intro: string; sections: Section[] }> = {
   es: {
     title: 'como_esta_hecho.txt — Bloc de notas',
+    heading: 'Cómo está hecho',
+    description:
+      'Las decisiones de diseño y técnicas detrás de este portfolio: Astro, MDX, diseño retro propio, accesibilidad y rendimiento.',
     intro:
       'Este portfolio parece un escritorio de los 2000, pero es una web normal con scroll: sin ventanas arrastrables, para que llegar a un proyecto lleve un solo clic. Estas son las decisiones que hay detrás.',
     sections: [
@@ -57,6 +61,9 @@ const content: Record<Lang, { title: string; intro: string; sections: Section[] 
   },
   en: {
     title: 'how_its_made.txt — Notepad',
+    heading: 'How it is made',
+    description:
+      'The design and technical decisions behind this portfolio: Astro, MDX, original retro design, accessibility and performance.',
     intro:
       'This portfolio looks like an early-2000s desktop, but it is a normal scrolling website: no draggable windows, so reaching a project takes a single click. These are the decisions behind it.',
     sections: [
@@ -97,26 +104,25 @@ const content: Record<Lang, { title: string; intro: string; sections: Section[] 
 const page = content[lang];
 ---
 
-<div class="page">
-  <div class="how">
-    <NotepadAbout title={page.title} id="como-esta-hecho" level="h1" closeHref={localePath(lang)}>
-      <p><a href={localePath(lang)}>{t('project.back')}</a></p>
-      <p>{page.intro}</p>
-      {
-        page.sections.map((s) => (
-          <>
-            <h2>{s.heading}</h2>
-            <ul>{s.items.map((item) => <li>{item}</li>)}</ul>
-          </>
-        ))
-      }
-    </NotepadAbout>
-  </div>
-</div>
-
-<style>
-  .how {
-    width: min(100%, 46rem);
-    margin-inline: auto;
-  }
-</style>
+<PageDesk lang={lang} title={`${page.heading} · Marta Prieto`} description={page.description}>
+  <NotepadAbout
+    title={page.title}
+    id="como-esta-hecho"
+    level="h1"
+    closeHref={localePath(lang)}
+    class="window--page window--page-narrow"
+    dialog
+    draggable={false}
+  >
+    <p><a href={localePath(lang)}>{t('project.back')}</a></p>
+    <p>{page.intro}</p>
+    {
+      page.sections.map((s) => (
+        <>
+          <h2>{s.heading}</h2>
+          <ul>{s.items.map((item) => <li>{item}</li>)}</ul>
+        </>
+      ))
+    }
+  </NotepadAbout>
+</PageDesk>

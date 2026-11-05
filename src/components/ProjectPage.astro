@@ -3,7 +3,7 @@
 // El botón X de la barra y "← Escritorio" son enlaces reales de vuelta a la portada.
 import { Image } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
-import Base from '../layouts/Base.astro';
+import PageDesk from './PageDesk.astro';
 import Window from './Window.astro';
 import CdPlayer from './CdPlayer.astro';
 import TechIcon from './TechIcon.astro';
@@ -30,10 +30,19 @@ const chips = data.tech.map((name) => ({
 const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', 'View'];
 ---
 
-<Base lang={lang} title={`${data.title} · Marta Prieto`} description={data.summary}>
-  <div class="page">
-    <div class="project">
-      <Window as="article" level="h1" title={data.title} id="proyecto" icon={data.icon} closeHref={home} flush>
+<PageDesk lang={lang} title={`${data.title} · Marta Prieto`} description={data.summary}>
+  <Window
+    as="article"
+    level="h1"
+    title={data.title}
+    id="proyecto"
+    icon={data.icon}
+    closeHref={home}
+    class="window--page"
+    dialog
+    draggable={false}
+    flush
+  >
         <div slot="menu" class="menu">
           <a class="menu__back" href={home}>{t('project.back')}</a>
           <span class="menu__fake" aria-hidden="true">{menu.map((m) => <span>{m}</span>)}</span>
@@ -68,23 +77,16 @@ const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', '
             )
           }
 
-          {data.video && <CdPlayer videoId={data.video} title={`${t('project.video')} · ${data.title}`} />}
+          {data.video && <CdPlayer videoId={data.video} title={`${t('project.video')} · ${data.title}`} poster={data.videoPoster} />}
 
           <div class="prose">
             <Content />
           </div>
         </div>
-      </Window>
-    </div>
-  </div>
-</Base>
+  </Window>
+</PageDesk>
 
 <style>
-  .project {
-    width: min(100%, var(--w-project));
-    margin-inline: auto;
-  }
-
   .menu {
     display: flex;
     align-items: center;

@@ -33,6 +33,8 @@ const projects = defineCollection({
       repo: z.string().url(),
       /** ID del vídeo de YouTube (lo que va tras `youtu.be/`). Opcional. */
       video: z.string().optional(),
+      /** Miniatura LOCAL del vídeo (descárgala una vez a src/assets/video/). Se muestra antes de pulsar play. */
+      videoPoster: image().optional(),
       /** Imagen de portada. Va en src/assets y se optimiza sola. Opcional. */
       cover: image().optional(),
       /** Texto alternativo de la portada (obligatorio si hay portada). */
