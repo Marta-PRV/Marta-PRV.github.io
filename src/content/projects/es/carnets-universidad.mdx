@@ -1,0 +1,65 @@
+---
+title: Carnets de la universidad
+summary: Plataforma web y API para gestionar estudiantes y emitir carnets universitarios digitales e imprimibles. Proyecto real con cliente interno y un equipo de desarrollo y diseño.
+category: web
+icon: idcard
+iconLabel: Carnets
+tech: [Next.js, React, Node.js, Express, TypeScript, MySQL, MongoDB, Tailwind CSS, Jest]
+repo: https://github.com/Marta-PRV/carnets-universidad
+video: _sORKLl2Irs
+order: 3
+---
+
+## Qué es
+
+Una plataforma full stack para **gestionar y emitir los carnets de una universidad**. No es un ejercicio: es un proyecto real, hecho por un equipo multidisciplinar (desarrollo y diseño) para un cliente interno.
+
+Funciona así: la secretaría da de alta a los estudiantes, la plataforma genera su **carnet digital** y deja listo un **flujo de impresión**.
+
+## Qué permite hacer
+
+- Alta y gestión de estudiantes en la base de datos.
+- Generar y ver el carnet digital.
+- Imprimir los carnets desde un flujo pensado para secretaría.
+- Buscar y filtrar, con validaciones y roles básicos de usuario.
+
+## Cómo está montado
+
+Tres piezas conectadas: una **web** (Next.js y React, con Tailwind y Material UI), una **API REST** (Node.js, Express y TypeScript) y las **bases de datos** (MySQL y MongoDB). La API está desplegada en Render, usa autenticación con tokens JWT, valida los datos de entrada, está documentada con Swagger y tiene tests con Jest. El equipo coordinaba el trabajo con GitHub y Trello.
+
+Un fragmento de la API: el middleware que comprueba el token de cada petición y deja disponible al usuario que la hace.
+
+```ts title="api/code/middleware/auth.ts" {14,17,23}
+export default async function auth(req: any, res: any, next: any) {
+	try {
+		if (!req.header('Authorization')) {
+			throw new Error("Se debe enviar un token JWT!");
+		}
+
+		const token = req.header('Authorization').split(" ").pop();
+
+		if (!token) {
+			throw new Error("No hay token!");
+		}
+
+		const jsonWebTokenService: JsonWebTokenService = new JsonWebTokenService();
+		const decoded = jsonWebTokenService.verifyToken(token);
+
+		const userService: UserService = new UserService();
+		const user: UserMongoObjectInterface = await userService.getUserById(decoded.userId);
+
+		if (!user) {
+			throw new Error("El usuario no existe!");
+		}
+
+		req.user = user;
+		next();
+	} catch (error) {
+		handleHttpError(res, new HttpError("INVALID_TOKEN", 401));
+	}
+}
+```
+
+{/* TODO(Marta): sección "Qué hice yo" — qué partes concretas hiciste tú (web, API, base de datos, diseño...). El README del repo no lo cuenta y no quiero inventarlo. */}
+
+{/* TODO(Marta): sección "El reto" — lo más difícil de trabajar con un cliente real y un equipo. */}

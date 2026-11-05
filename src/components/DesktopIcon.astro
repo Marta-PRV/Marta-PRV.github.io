@@ -1,0 +1,115 @@
+---
+// Icono de escritorio = un enlace normal (un clic, Enter con teclado) con icono
+// pixel y nombre siempre visible. Nada de JS.
+import Icon from './Icon.astro';
+import type { IconName } from './icons';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+interface Props {
+  href: string;
+  label: string;
+  icon: IconName;
+  /** Enlace a otra web: se abre en pestaña nueva y se avisa a lectores de pantalla. */
+  external?: boolean;
+}
+
+const { href, label, icon, external = false } = Astro.props;
+const t = useTranslations(getLangFromUrl(Astro.url));
+---
+
+<a
+  class="dicon"
+  href={href}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+>
+  <span class="dicon__img"><Icon name={icon} size={48} /></span>
+  <span class="dicon__label">{label}</span>
+  {external && <span class="visually-hidden">{t('link.external')}</span>}
+</a>
+
+<style>
+  .dicon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-1);
+    width: 5.25rem;
+    padding: var(--s-1) 0;
+    color: var(--label-text);
+    text-decoration: none;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (min-width: 52rem) {
+    .dicon {
+      width: 6rem;
+    }
+  }
+
+  .dicon__img {
+    display: block;
+    /* El contorno de los iconos usa currentColor: aquí, siempre oscuro (no el blanco de la etiqueta) */
+    color: #14172b;
+    filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.28));
+    /* Transición (no keyframes): se puede interrumpir si el ratón entra y sale rápido */
+    transition: transform 140ms var(--ease-out);
+  }
+
+  .dicon__label {
+    padding: 2px 3px;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: 1.15;
+    background: var(--label-bg);
+    border-radius: 2px;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  /* Selección azul + contorno punteado, como un escritorio clásico.
+     También con teclado, pero SIN movimiento (las acciones de teclado no se animan). */
+  .dicon:focus-visible .dicon__label {
+    background: var(--select);
+    outline: 1px dotted #fff;
+    outline-offset: -3px;
+  }
+
+  /* Táctil: respuesta inmediata al pulsar */
+  .dicon:active .dicon__label {
+    background: var(--select);
+  }
+
+  .dicon:active .dicon__img {
+    transform: scale(0.94);
+  }
+
+  /* El rebote solo con ratón real (en táctil el hover se queda "pegado" tras tocar) */
+  @media (hover: hover) and (pointer: fine) {
+    .dicon:hover .dicon__label {
+      background: var(--select);
+      outline: 1px dotted #fff;
+      outline-offset: -3px;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .dicon:hover .dicon__img {
+      transform: translateY(-3px);
+    }
+
+    .dicon:hover:active .dicon__img {
+      transform: translateY(0) scale(0.96);
+    }
+  }
+
+  /* Móvil (4 columnas; va al final para ganar a la regla base): etiqueta algo más pequeña para que "ArtPrompt" quepa en una línea */
+  @media (max-width: 51.99rem) {
+    .dicon__label {
+      padding: 2px 1px;
+      font-size: 0.875rem;
+      letter-spacing: -0.02em;
+    }
+  }
+</style>

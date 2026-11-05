@@ -36,6 +36,11 @@
   --note-text: #2a2412;
   --ink: light-dark(#a8321e, #ff8a70);
 
+  /* Iconos de escritorio: pastilla azul marino para que la etiqueta se lea sobre cualquier fondo */
+  --label-bg: light-dark(rgb(8 36 100 / 0.84), rgb(6 10 36 / 0.78));
+  --label-text: #ffffff;
+  --select: light-dark(#316ac5, #4a63d8);
+
   /* Interacción */
   --link: light-dark(#0b3fa8, #9db8ff);
   --focus: light-dark(#c2410c, #ffd166);
@@ -57,9 +62,10 @@
   --font-ui: 'Pixelify Sans', ui-monospace, Consolas, monospace;
   --font-body: 'Atkinson Hyperlegible Next', system-ui, 'Segoe UI', sans-serif;
   --font-marker: 'Permanent Marker', 'Comic Sans MS', cursive;
+  --text-ui: 1rem; /* títulos de ventana y etiquetas (Pixelify Sans) */
   --text-sm: 0.9375rem;
-  --text-base: 1.0625rem;
-  --text-lg: 1.25rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
   --text-xl: 1.75rem;
   --text-2xl: clamp(2rem, 1.2rem + 3.5vw, 3.25rem);
   --measure: 66ch;
@@ -75,6 +81,14 @@
   --s-8: 4.5rem;
   --gutter: 1rem;
   --page-max: 68rem;
+
+  /* Tamaños compactos de ventana (escritorio de los 2000: nada enorme) */
+  --bar-h: 1.9rem;
+  --w-photo: 17.5rem;
+  --w-notepad: 23rem;
+  --w-tech: 28rem;
+  --w-contact: 20rem;
+  --w-project: 60rem;
 
   /* Forma y sombra (una sola elevación para las ventanas) */
   --radius-window: 8px;

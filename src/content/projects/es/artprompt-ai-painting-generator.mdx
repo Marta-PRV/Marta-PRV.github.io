@@ -1,0 +1,59 @@
+---
+title: ArtPrompt
+summary: Genera cuadros con IA en el estilo de pintores famosos a partir de un texto. Entrené una red neuronal con un dataset de 5 artistas y usé Stable Diffusion para crear las imágenes.
+category: ia
+icon: artpalette
+tech: [Python, Jupyter Notebook, PyTorch, Stable Diffusion, Matplotlib, Pillow]
+repo: https://github.com/Marta-PRV/artprompt-ai-painting-generator
+order: 2
+---
+
+import { Image } from 'astro:assets';
+import woman from '../../../assets/artprompt/woman.png';
+import portrait from '../../../assets/artprompt/portrait.png';
+
+## Qué es
+
+Un proyecto que explora la unión entre **inteligencia artificial y creatividad artística**: investigar hasta qué punto un modelo puede aprender estilos de pintura y aplicarlos a obras nuevas.
+
+El usuario elige un **artista**, escribe un **prompt** (una descripción) y obtiene una imagen generada en ese estilo, junto a dos obras reales del mismo artista para poder compararlas.
+
+## Qué hice yo
+
+- Creé **manualmente el dataset** con las obras de 5 artistas.
+- Implementé una **red neuronal** que clasifica el estilo de cada artista.
+- Integré **Stable Diffusion** para generar las imágenes.
+- Desarrollé la **interfaz interactiva** con widgets dentro del cuaderno (desplegable de artistas y caja de texto).
+
+## Cómo funciona
+
+1. **Preparación de las imágenes.** Cada imagen se redimensiona a 512×512, se convierte a tensor y se normaliza entre -1 y 1 para que el entrenamiento sea estable.
+2. **Clasificación de estilos.** Una red neuronal sencilla (capas totalmente conectadas) aprende a distinguir a los artistas. Se entrena con el optimizador Adam, entropía cruzada y un planificador que reduce la tasa de aprendizaje cuando la pérdida deja de mejorar.
+3. **Generación.** El prompt del usuario se combina con el estilo del artista elegido y se envía a Stable Diffusion (`stable-diffusion-v1-4`). El resultado se muestra al lado de imágenes de referencia del dataset.
+
+```python title="generate_and_compare" {2-3}
+def generate_and_compare(artist, prompt):
+    full_prompt = f"A painting in the style of {artist}: {prompt}"
+    generated_image = pipeline(full_prompt).images[0]
+
+    artist_path = os.path.join(dataset_path, artist)
+    reference_images = random.sample(os.listdir(artist_path), min(2, len(os.listdir(artist_path))))
+    # ... muestra la imagen generada junto a las dos referencias
+```
+
+Stable Diffusion entiende mejor los prompts en inglés, así que los ejemplos están escritos en ese idioma.
+
+## Resultados
+
+<div class="gallery">
+  <figure>
+    <Image src={woman} alt="Imagen generada de una mujer en un campo, en el estilo de Monet" widths={[320, 480]} sizes="(max-width: 40rem) 90vw, 20rem" />
+    <figcaption>«Woman in field», estilo Monet</figcaption>
+  </figure>
+  <figure>
+    <Image src={portrait} alt="Imagen generada de un autorretrato de un mono, en el estilo de Frida Kahlo" widths={[320, 480]} sizes="(max-width: 40rem) 90vw, 20rem" />
+    <figcaption>«Self portrait monkey», estilo Kahlo</figcaption>
+  </figure>
+</div>
+
+{/* TODO(Marta): añadir una sección "El reto" con lo que te costó más en este proyecto (cuéntamelo y la redacto). */}

@@ -1,9 +1,11 @@
 ---
-// Ventana retro. Es un <article> o <section> normal con su título como
-// encabezado (así los lectores de pantalla navegan por ella). Los tres botones
-// de la barra son decoración pura: no hacen nada y se ocultan a la accesibilidad.
+// Ventana retro compacta. Es un <article> o <section> normal con su título como
+// encabezado (así los lectores de pantalla navegan por ella). Los botones de la
+// barra son decoración, salvo el de cerrar cuando se pasa `closeHref`: entonces
+// es un enlace real de vuelta al escritorio.
 import Icon from './Icon.astro';
 import type { IconName } from './icons';
+import { getLangFromUrl, localePath, useTranslations } from '../i18n/utils';
 
 interface Props {
   title: string;
@@ -15,21 +17,42 @@ interface Props {
   as?: 'article' | 'section';
   /** Quita el relleno del cuerpo (útil para vídeo o imagen a sangre). */
   flush?: boolean;
+  /** Si se indica, el botón de cerrar es un enlace a esta ruta (p. ej. el escritorio). */
+  closeHref?: string;
+  /** Posición en la cascada de apertura (cada paso añade ~70 ms de retraso). */
+  index?: number;
   class?: string;
 }
 
-const { title, id, icon = 'folder', level = 'h2', as: Tag = 'section', flush = false, class: className } = Astro.props;
+const {
+  title,
+  id,
+  icon = 'folder',
+  level = 'h2',
+  as: Tag = 'section',
+  flush = false,
+  closeHref,
+  index = 0,
+  class: className,
+} = Astro.props;
 const Heading = level;
+const lang = getLangFromUrl(Astro.url);
+const closeLabel = useTranslations(lang)('window.close');
+const closeX = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1l6 6M7 1L1 7" stroke="#fff" stroke-width="1.6" /></svg>';
 ---
 
-<Tag class:list={['window', className]} aria-labelledby={id}>
+<Tag class:list={['window', className]} aria-labelledby={id} style={`--i:${index}`}>
   <div class="window__bar">
     <Icon name={icon} size={16} />
     <Heading class="window__title" id={id}>{title}</Heading>
-    <span class="window__controls" aria-hidden="true">
-      <span class="ctl"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="5" width="5" height="2" fill="#fff" /></svg></span>
-      <span class="ctl"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1h6v6H1z" fill="none" stroke="#fff" stroke-width="1.5" /></svg></span>
-      <span class="ctl ctl--close"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1l6 6M7 1L1 7" stroke="#fff" stroke-width="1.6" /></svg></span>
+    <span class="window__controls">
+      <span class="ctl" aria-hidden="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="5" width="5" height="2" fill="#fff" /></svg></span>
+      <span class="ctl" aria-hidden="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><path d="M1 1h6v6H1z" fill="none" stroke="#fff" stroke-width="1.5" /></svg></span>
+      {closeHref ? (
+        <a class="ctl ctl--close ctl--link" href={closeHref} aria-label={closeLabel} set:html={closeX} />
+      ) : (
+        <span class="ctl ctl--close" aria-hidden="true" set:html={closeX} />
+      )}
     </span>
   </div>
   <slot name="menu" />
@@ -52,7 +75,7 @@ const Heading = level;
     display: flex;
     align-items: center;
     gap: var(--s-2);
-    min-height: 2.25rem;
+    min-height: var(--bar-h);
     padding: 0 var(--s-1) 0 var(--s-2);
     color: var(--titlebar-text);
     background: linear-gradient(to bottom, var(--titlebar-b), var(--titlebar-a));
@@ -63,10 +86,9 @@ const Heading = level;
     flex: 1;
     min-width: 0;
     font-family: var(--font-ui);
-    font-size: 1.0625rem;
-    font-weight: 400;
+    font-size: var(--text-ui);
+    font-weight: 400; /* Pixelify Sans solo en 400: ver DESIGN.md */
     line-height: 1;
-    letter-spacing: 0.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -75,30 +97,41 @@ const Heading = level;
 
   .window__controls {
     display: flex;
-    gap: 3px;
+    gap: 2px;
   }
 
   .ctl {
     display: grid;
     place-items: center;
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 1.125rem;
+    height: 1.125rem;
     background: var(--titlebar-b);
     border: 1px solid #fff;
     border-radius: 3px;
   }
 
-  .ctl svg {
-    width: 0.5rem;
-    height: 0.5rem;
+  .ctl :global(svg) {
+    width: 0.4375rem;
+    height: 0.4375rem;
   }
 
   .ctl--close {
     background: #d9402a;
   }
 
+  /* El enlace de cerrar conserva el tamaño visual pero amplía su zona táctil */
+  .ctl--link {
+    position: relative;
+  }
+
+  .ctl--link::after {
+    content: '';
+    position: absolute;
+    inset: -0.5rem;
+  }
+
   .window__body {
-    padding: var(--s-5);
+    padding: var(--s-4);
     background: var(--window);
     color: var(--window-text);
   }
@@ -114,12 +147,22 @@ const Heading = level;
     }
   }
 
-  @media (min-width: 40rem) {
-    .window__body {
-      padding: var(--s-6);
+  /* Apertura en cascada: una sola vez al cargar. Sin movimiento si el usuario lo pide. */
+  @media (prefers-reduced-motion: no-preference) {
+    .window {
+      animation: window-open var(--dur-window) var(--ease-out) both;
+      animation-delay: calc(var(--i, 0) * 70ms);
     }
-    .window__body--flush {
-      padding: 0;
+  }
+
+  @keyframes window-open {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 </style>

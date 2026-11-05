@@ -185,3 +185,26 @@ textarea {
     inset 1px 1px 0 var(--button-lo),
     inset -1px -1px 0 var(--button-hi);
 }
+
+/* Figuras e imágenes dentro de las páginas de proyecto (MDX) */
+.prose img {
+  height: auto;
+  border: 1px solid var(--window-line);
+}
+
+.prose figure {
+  margin: 0;
+}
+
+.prose figcaption {
+  margin-block-start: var(--s-2);
+  font-size: var(--text-sm);
+  color: var(--window-muted);
+}
+
+.prose .gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--s-4);
+  max-width: none;
+}

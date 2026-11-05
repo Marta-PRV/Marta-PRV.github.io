@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { iconNames } from './components/icons';
 
 /**
  * Colección de proyectos.
@@ -22,6 +23,10 @@ const projects = defineCollection({
       summary: z.string().max(200),
       /** Categoría principal; se usa para el icono y el filtro. */
       category: z.enum(['web', 'ia', 'videojuegos', 'vr']),
+      /** Icono pixel del escritorio (nombre de src/components/icons.ts: zombie, artpalette, idcard, vr...). */
+      icon: z.enum(iconNames),
+      /** Nombre corto bajo el icono del escritorio (máx. ~12 caracteres). Si falta, se usa el título. */
+      iconLabel: z.string().max(14).optional(),
       /** Tecnologías y herramientas, en el orden en que quieres mostrarlas. */
       tech: z.array(z.string()).min(1),
       /** URL del repositorio en GitHub. */

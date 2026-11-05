@@ -1,0 +1,59 @@
+---
+title: ArtPrompt
+summary: Generates paintings with AI in the style of famous painters from a text prompt. I trained a neural network on a 5-artist dataset and used Stable Diffusion to create the images.
+category: ia
+icon: artpalette
+tech: [Python, Jupyter Notebook, PyTorch, Stable Diffusion, Matplotlib, Pillow]
+repo: https://github.com/Marta-PRV/artprompt-ai-painting-generator
+order: 2
+---
+
+import { Image } from 'astro:assets';
+import woman from '../../../assets/artprompt/woman.png';
+import portrait from '../../../assets/artprompt/portrait.png';
+
+## What it is
+
+A project exploring the meeting point of **artificial intelligence and artistic creativity**: finding out how far a model can learn painting styles and apply them to new artworks.
+
+The user picks an **artist**, writes a **prompt** (a description) and gets an image generated in that style, next to two real works by the same artist for comparison.
+
+## What I did
+
+- Built the **dataset by hand** with works from 5 artists.
+- Implemented a **neural network** that classifies each artist's style.
+- Integrated **Stable Diffusion** to generate the images.
+- Built the **interactive interface** with widgets inside the notebook (artist dropdown and text box).
+
+## How it works
+
+1. **Image preparation.** Every image is resized to 512×512, converted to a tensor and normalised between -1 and 1 so training is stable.
+2. **Style classification.** A simple neural network (fully connected layers) learns to tell the artists apart. It is trained with the Adam optimiser, cross-entropy loss and a scheduler that lowers the learning rate when the loss stops improving.
+3. **Generation.** The user's prompt is combined with the chosen artist's style and sent to Stable Diffusion (`stable-diffusion-v1-4`). The result is shown next to reference images from the dataset.
+
+```python title="generate_and_compare" {2-3}
+def generate_and_compare(artist, prompt):
+    full_prompt = f"A painting in the style of {artist}: {prompt}"
+    generated_image = pipeline(full_prompt).images[0]
+
+    artist_path = os.path.join(dataset_path, artist)
+    reference_images = random.sample(os.listdir(artist_path), min(2, len(os.listdir(artist_path))))
+    # ... shows the generated image next to the two references
+```
+
+Stable Diffusion understands English prompts better, so the examples are written in that language.
+
+## Results
+
+<div class="gallery">
+  <figure>
+    <Image src={woman} alt="Generated image of a woman in a field, in the style of Monet" widths={[320, 480]} sizes="(max-width: 40rem) 90vw, 20rem" />
+    <figcaption>"Woman in field", Monet style</figcaption>
+  </figure>
+  <figure>
+    <Image src={portrait} alt="Generated image of a monkey self-portrait, in the style of Frida Kahlo" widths={[320, 480]} sizes="(max-width: 40rem) 90vw, 20rem" />
+    <figcaption>"Self portrait monkey", Kahlo style</figcaption>
+  </figure>
+</div>
+
+{/* TODO(Marta): add a "The challenge" section with what was hardest in this project (tell me and I'll write it). */}

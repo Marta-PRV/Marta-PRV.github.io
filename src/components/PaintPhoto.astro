@@ -11,16 +11,18 @@ interface Props {
   id: string;
   image: ImageMetadata;
   alt: string;
+  /** Posición en la cascada de apertura. */
+  index?: number;
   class?: string;
 }
 
-const { title, id, image, alt, class: className } = Astro.props;
+const { title, id, image, alt, index = 0, class: className } = Astro.props;
 
 const swatches = ['#000000', '#7f7f7f', '#7f0000', '#7f7f00', '#007f00', '#007f7f', '#00007f', '#7f007f',
   '#ffffff', '#c0c0c0', '#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'];
 ---
 
-<Window title={title} id={id} icon="paint" flush class={className}>
+<Window title={title} id={id} icon="paint" flush index={index} class={className}>
   <div class="paint">
     <div class="tools" aria-hidden="true">
       {Array.from({ length: 12 }, () => <span />)}

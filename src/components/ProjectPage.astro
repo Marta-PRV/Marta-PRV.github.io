@@ -1,0 +1,176 @@
+---
+// Página de un proyecto: una ventana grande (como abrir el icono del escritorio).
+// El botón X de la barra y "← Escritorio" son enlaces reales de vuelta a la portada.
+import { Image } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Window from './Window.astro';
+import CdPlayer from './CdPlayer.astro';
+import TechIcon from './TechIcon.astro';
+import { tech } from '../data/tech';
+import type { Lang } from '../i18n/ui';
+import { localePath, useTranslations } from '../i18n/utils';
+
+interface Props {
+  entry: CollectionEntry<'projects'>;
+  lang: Lang;
+}
+
+const { entry, lang } = Astro.props;
+const { data } = entry;
+const t = useTranslations(lang);
+const home = localePath(lang);
+const { Content } = await render(entry);
+
+// Si una tecnología está en src/data/tech.ts, su chip lleva el azulejo pixel; si no, solo el nombre.
+const chips = data.tech.map((name) => ({
+  name,
+  known: tech.find((item) => item.name.toLowerCase() === name.toLowerCase()),
+}));
+const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', 'View'];
+---
+
+<Base lang={lang} title={`${data.title} · Marta Prieto`} description={data.summary}>
+  <div class="page">
+    <div class="project">
+      <Window as="article" level="h1" title={data.title} id="proyecto" icon={data.icon} closeHref={home} flush>
+        <div slot="menu" class="menu">
+          <a class="menu__back" href={home}>{t('project.back')}</a>
+          <span class="menu__fake" aria-hidden="true">{menu.map((m) => <span>{m}</span>)}</span>
+        </div>
+
+        <div class="body">
+          <header class="head">
+            <p class="lead">{data.summary}</p>
+            <a class="btn" href={data.repo} target="_blank" rel="noopener noreferrer">
+              {t('project.repo')} <span class="visually-hidden">{t('link.external')}</span>
+            </a>
+          </header>
+
+          <section aria-label={t('project.tech')}>
+            <ul class="chips">
+              {
+                chips.map((c) => (
+                  <li class="chip">
+                    {c.known && <TechIcon tech={c.known} size={16} />}
+                    {c.name}
+                  </li>
+                ))
+              }
+            </ul>
+          </section>
+
+          {
+            data.cover && (
+              <figure class="cover">
+                <Image src={data.cover} alt={data.coverAlt ?? ''} widths={[480, 800, 1200]} sizes="(max-width: 60rem) 100vw, 56rem" />
+              </figure>
+            )
+          }
+
+          {data.video && <CdPlayer videoId={data.video} title={`${t('project.video')} · ${data.title}`} />}
+
+          <div class="prose">
+            <Content />
+          </div>
+        </div>
+      </Window>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .project {
+    width: min(100%, var(--w-project));
+    margin-inline: auto;
+  }
+
+  .menu {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: 0 var(--s-3);
+    min-height: 2.75rem;
+    font-size: var(--text-sm);
+    background: var(--window);
+    border-bottom: 1px solid var(--window-line);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .menu__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    font-family: var(--font-ui);
+    color: var(--link);
+  }
+
+  .menu__fake {
+    display: flex;
+    gap: var(--s-4);
+    color: var(--window-muted);
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr); /* sin esto, el contenido más ancho ensancha la columna y desborda en móvil */
+    gap: var(--s-5);
+    padding: var(--s-4);
+    background: var(--window);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3) var(--s-5);
+  }
+
+  .lead {
+    flex: 1 1 18rem;
+    max-width: var(--measure);
+    font-size: var(--text-lg);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 3px var(--s-3);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    background: var(--button);
+    border: 1px solid var(--button-edge);
+    border-radius: 3px;
+    box-shadow:
+      inset 1px 1px 0 var(--button-hi),
+      inset -1px -1px 0 var(--button-lo);
+  }
+
+  .cover {
+    margin: 0;
+    border: 1px solid var(--window-line);
+  }
+
+  .cover :global(img) {
+    width: 100%;
+    height: auto;
+  }
+
+  @media (min-width: 40rem) {
+    .body {
+      padding: var(--s-6);
+    }
+  }
+</style>

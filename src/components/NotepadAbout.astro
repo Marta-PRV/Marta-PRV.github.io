@@ -8,14 +8,20 @@ import { getLangFromUrl } from '../i18n/utils';
 interface Props {
   title: string;
   id: string;
+  /** Nivel del encabezado del título (h1 si es la página principal, h2 por defecto). */
+  level?: 'h1' | 'h2';
+  /** Si se indica, el botón de cerrar es un enlace real a esta ruta. */
+  closeHref?: string;
+  /** Posición en la cascada de apertura. */
+  index?: number;
   class?: string;
 }
 
-const { title, id, class: className } = Astro.props;
+const { title, id, level = 'h2', closeHref, index = 0, class: className } = Astro.props;
 const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Formato', 'Ver', 'Ayuda'] : ['File', 'Edit', 'Format', 'View', 'Help'];
 ---
 
-<Window title={title} id={id} icon="notepad" flush class={className}>
+<Window title={title} id={id} icon="notepad" level={level} closeHref={closeHref} flush index={index} class={className}>
   <div slot="menu" class="menu" aria-hidden="true">
     {menu.map((item) => <span>{item}</span>)}
   </div>

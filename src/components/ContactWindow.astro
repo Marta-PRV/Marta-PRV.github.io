@@ -1,0 +1,75 @@
+---
+// Ventanita de contacto: email visible, botón "Copiar" y enlace "Escribir correo".
+// Muchos reclutadores no tienen cliente de correo configurado, así que el
+// enlace mailto solo no basta: con "Copiar" siempre pueden llevarse la dirección.
+import Window from './Window.astro';
+import { email, encodeEntities } from '../data/contact';
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+interface Props {
+  index?: number;
+}
+
+const { index = 0 } = Astro.props;
+const t = useTranslations(getLangFromUrl(Astro.url));
+const address = encodeEntities(`${email.user}@${email.domain}`);
+const mailto = `<a class="btn" href="mailto:${address}">${t('contact.write')}</a>`;
+---
+
+<Window title={t('contact.title')} id="contacto" icon="mail" index={index}>
+  <p>{t('contact.lead')}</p>
+  <p class="address" set:html={address} />
+  <div class="actions">
+    <button
+      class="btn"
+      type="button"
+      data-copy
+      data-user={email.user}
+      data-domain={email.domain}
+      data-label={t('contact.copy')}
+      data-done={t('contact.copied')}
+    >
+      {t('contact.copy')}
+    </button>
+    <Fragment set:html={mailto} />
+  </div>
+  <p class="visually-hidden" role="status" aria-live="polite" data-copy-status></p>
+</Window>
+
+<style>
+  .address {
+    margin-block: var(--s-3);
+    font-family: var(--font-ui);
+    font-size: var(--text-lg);
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+</style>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-copy]');
+  const status = document.querySelector<HTMLElement>('[data-copy-status]');
+  let timer: number | undefined;
+
+  button?.addEventListener('click', async () => {
+    const address = `${button.dataset.user}@${button.dataset.domain}`;
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      return; // sin permiso para el portapapeles: la dirección sigue visible para copiarla a mano
+    }
+    button.textContent = button.dataset.done ?? '';
+    if (status) status.textContent = button.dataset.done ?? '';
+    clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      button.textContent = button.dataset.label ?? '';
+      if (status) status.textContent = '';
+    }, 2000);
+  });
+</script>

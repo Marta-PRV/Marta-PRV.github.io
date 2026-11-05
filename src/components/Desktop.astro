@@ -1,0 +1,185 @@
+---
+// La portada: un escritorio de los 2000 ordenado y compacto (sin ventanas
+// arrastrables). Orden de lectura = orden del DOM, que es el mismo en PC y móvil:
+//   1) iconos de proyectos  2) ventanas (foto + bloc, tecnologías, contacto)  3) accesos.
+// En PC (>= 52rem) se colocan en tres columnas; en móvil se apilan y los iconos
+// forman una rejilla tipo pantalla de inicio de teléfono.
+import { getCollection } from 'astro:content';
+import DesktopIcon from './DesktopIcon.astro';
+import PaintPhoto from './PaintPhoto.astro';
+import NotepadAbout from './NotepadAbout.astro';
+import TechWindow from './TechWindow.astro';
+import ContactWindow from './ContactWindow.astro';
+import marta from '../assets/marta.jpg';
+import { about } from '../data/about';
+import { shortcuts } from '../data/shortcuts';
+import type { Lang } from '../i18n/ui';
+import { localePath, sectionSlug, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const text = about[lang];
+
+// Proyectos del idioma actual, ordenados por `order` (menor = más arriba).
+const projects = (await getCollection('projects', ({ id, data }) => id.startsWith(`${lang}/`) && !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const projectHref = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}/${id.replace(`${lang}/`, '')}`);
+
+function shortcutHref(s: (typeof shortcuts)[number]) {
+  if (s.kind === 'external') return s.target;
+  if (s.kind === 'anchor') return `${localePath(lang)}#${s.target}`;
+  return localePath(lang, sectionSlug(lang, s.target as 'como-esta-hecho'));
+}
+---
+
+<div class="page desktop">
+  <h1 class="visually-hidden">{t('home.h1')}</h1>
+
+  <section class="icons" id="proyectos" aria-labelledby="h-proyectos">
+    <h2 class="visually-hidden" id="h-proyectos">{t('nav.projects')}</h2>
+    <ul class="icons__list">
+      {
+        projects.map((p) => (
+          <li>
+            <DesktopIcon href={projectHref(p.id)} label={p.data.iconLabel ?? p.data.title} icon={p.data.icon} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <div class="stage">
+    <div class="cluster">
+      <div class="cluster__photo">
+        <PaintPhoto title={t('photo.title')} id="foto" image={marta} alt={t('photo.alt')} index={0} />
+      </div>
+      <div class="cluster__note">
+        <NotepadAbout title={t('about.title')} id="sobre-mi" index={1}>
+          <p class="note-name">{text.name}</p>
+          {text.paragraphs.map((p) => <p>{p}</p>)}
+        </NotepadAbout>
+      </div>
+    </div>
+    <div class="stage__tech"><TechWindow title={t('tech.title')} index={2} /></div>
+    <div class="stage__contact"><ContactWindow index={3} /></div>
+  </div>
+
+  <section class="icons" aria-labelledby="h-accesos">
+    <h2 class="visually-hidden" id="h-accesos">{t('home.shortcuts')}</h2>
+    <ul class="icons__list">
+      {
+        shortcuts.map((s) => (
+          <li>
+            <DesktopIcon href={shortcutHref(s)} label={s.label[lang]} icon={s.icon} external={s.kind === 'external'} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</div>
+
+<style>
+  .desktop {
+    display: grid;
+    gap: var(--s-5);
+    align-items: start;
+    padding-block: var(--s-5) var(--s-6);
+  }
+
+  /* Rejilla tipo pantalla de inicio: tantas columnas como quepan (4 en un móvil de 390px) */
+  .icons__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+    justify-items: center;
+    gap: var(--s-2) 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .stage {
+    display: grid;
+    gap: var(--s-5);
+    min-width: 0;
+  }
+
+  /* Móvil: foto y bloc se solapan poco (~1.25rem) y se desplazan en lados opuestos */
+  .cluster {
+    display: grid;
+  }
+
+  .cluster__photo {
+    width: min(78%, var(--w-photo));
+  }
+
+  .cluster__note {
+    position: relative;
+    z-index: 2;
+    justify-self: end;
+    width: min(94%, var(--w-notepad));
+    margin-block-start: -1.25rem;
+  }
+
+  .stage__tech {
+    width: min(100%, var(--w-tech));
+  }
+
+  .stage__contact {
+    width: min(100%, var(--w-contact));
+  }
+
+  .note-name {
+    font-family: var(--font-ui);
+    font-size: var(--text-xl);
+    line-height: 1.1;
+  }
+
+  /* PC: tres zonas. El bloc cubre ~3rem de la foto, por debajo de la cara */
+  @media (min-width: 52rem) {
+    .desktop {
+      grid-template-columns: 7rem minmax(0, 1fr) 7rem;
+      gap: var(--s-6);
+    }
+
+    .icons__list {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+
+    .stage {
+      justify-self: center;
+    }
+
+    .cluster {
+      width: calc(var(--w-photo) + var(--w-notepad) - 3rem);
+    }
+
+    .cluster__photo,
+    .cluster__note {
+      grid-area: 1 / 1;
+    }
+
+    .cluster__photo {
+      width: var(--w-photo);
+    }
+
+    .cluster__note {
+      justify-self: end;
+      width: var(--w-notepad);
+      margin-block-start: 8.5rem;
+    }
+
+    .stage__tech {
+      margin-inline-start: 2.5rem;
+    }
+
+    .stage__contact {
+      margin-inline-start: 8rem;
+    }
+  }
+</style>

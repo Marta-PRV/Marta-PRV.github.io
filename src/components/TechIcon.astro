@@ -1,0 +1,41 @@
+---
+// Azulejo pixel de una tecnología: cuadrado de color con borde oscuro, brillo
+// arriba/izquierda y el monograma dibujado con la mini fuente de pixelFont.ts.
+// Es decorativo: el nombre real va como texto visible justo debajo.
+import Icon from './Icon.astro';
+import type { Tech } from '../data/tech';
+import { renderMark } from '../data/pixelFont';
+
+interface Props {
+  tech: Tech;
+  /** Múltiplos de 16 para píxeles nítidos (32 = ×2). */
+  size?: number;
+}
+
+const { tech, size = 32 } = Astro.props;
+const pixels = tech.icon ? [] : renderMark(tech.mark);
+const ink = tech.ink === 'dark' ? '#1b1b2b' : '#ffffff';
+---
+
+{
+  tech.icon ? (
+    <Icon name={tech.icon} size={size} />
+  ) : (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      shape-rendering="crispEdges"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="0" y="0" width="16" height="16" fill="#16182a" />
+      <rect x="1" y="1" width="14" height="14" fill={tech.color} />
+      <rect x="1" y="1" width="14" height="1" fill="#ffffff" fill-opacity="0.35" />
+      <rect x="1" y="1" width="1" height="14" fill="#ffffff" fill-opacity="0.35" />
+      <rect x="1" y="14" width="14" height="1" fill="#000000" fill-opacity="0.25" />
+      <rect x="14" y="1" width="1" height="14" fill="#000000" fill-opacity="0.25" />
+      {pixels.map((p) => <rect x={p.x} y={p.y} width="1" height="1" fill={ink} />)}
+    </svg>
+  )
+}

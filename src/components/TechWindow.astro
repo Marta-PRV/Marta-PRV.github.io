@@ -1,0 +1,92 @@
+---
+// Ventana "Mis tecnologías" (estilo "Mis programas"). La lista sale de
+// src/data/tech.ts: para añadir una tecnología no hay que tocar este archivo.
+import Window from './Window.astro';
+import TechIcon from './TechIcon.astro';
+import { tech } from '../data/tech';
+
+interface Props {
+  title: string;
+  index?: number;
+}
+
+const { title, index = 0 } = Astro.props;
+---
+
+<Window title={title} id="tecnologias" icon="folder" index={index}>
+  <ul class="tech">
+    {
+      tech.map((item) => (
+        <li class="tech__item">
+          <span class="tech__tile"><TechIcon tech={item} size={32} /></span>
+          <span class="tech__name">{item.name}</span>
+        </li>
+      ))
+    }
+  </ul>
+</Window>
+
+<style>
+  .tech {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: var(--s-3) var(--s-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tech__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s-1);
+    padding: var(--s-1);
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tech__tile {
+    display: block;
+    transition: transform 140ms var(--ease-out);
+  }
+
+  .tech__name {
+    padding: 1px 3px;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  /* Tocar (móvil): respuesta inmediata mientras se pulsa */
+  .tech__item:active .tech__tile {
+    transform: translateY(-3px) scale(0.96);
+  }
+
+  .tech__item:active .tech__name {
+    background: var(--select);
+    color: #fff;
+  }
+
+  /* Ratón real: salto corto del azulejo y nombre seleccionado en azul */
+  @media (hover: hover) and (pointer: fine) {
+    .tech__item:hover .tech__name {
+      background: var(--select);
+      color: #fff;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .tech__item:hover .tech__tile {
+      transform: translateY(-3px);
+    }
+  }
+
+  /* Con "reducir movimiento" el azulejo no se mueve, pero el toque sigue dando respuesta (color) */
+  @media (prefers-reduced-motion: reduce) {
+    .tech__item:active .tech__tile {
+      transform: none;
+    }
+  }
+</style>
