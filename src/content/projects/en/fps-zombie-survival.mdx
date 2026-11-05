@@ -1,0 +1,63 @@
+---
+title: Zombie Survival FPS
+summary: First-person shooter prototype in Unity with chasing zombies, a coin economy and a shop to help you survive longer.
+category: videojuegos
+tech: [Unity, C#, Visual Studio]
+repo: https://github.com/Marta-PRV/fps-zombie-survival
+video: VqEWWKMhXMA
+order: 1
+---
+
+## What it is
+
+A first-person shooter set in a post-apocalyptic world. You have to survive endless waves of zombies while managing limited resources: every fallen zombie drops coins, which you spend on health, ammo or a stronger weapon.
+
+I built it as a university project, and it was my first **complete gameplay loop** in Unity, from enemies all the way to a working shop.
+
+## What I did
+
+- **Zombie AI**: they detect the player, chase them and attack.
+- **Random economy**: each zombie drops between 0 and 5 coins.
+- **Shop**: logic to buy health, ammo and unlock a better weapon.
+- **Core mechanics**: health, ammo and reloading.
+- Basic **UI** to give feedback to the player.
+
+## How the zombies think
+
+To make behaviour easy to extend I used a **state machine**: each state (patrol, attack...) is a class with three methods, and the machine only switches from one to another.
+
+```csharp title="StateMachine.cs" {6-18}
+public class StateMachine : MonoBehaviour
+{
+    public BaseState ActiveState { get; private set; }
+
+    public void ChangeState(BaseState newState)
+    {
+        if (ActiveState != null)
+        {
+            ActiveState.Exit();
+        }
+
+        ActiveState = newState;
+
+        if (ActiveState != null)
+        {
+            ActiveState.Enter();
+        }
+    }
+
+    private void Update()
+    {
+        if (ActiveState != null)
+        {
+            ActiveState.Perform();
+        }
+    }
+}
+```
+
+Adding a new behaviour means creating another class that inherits from `BaseState`, without touching anything else.
+
+## The challenge
+
+It was the first game I made entirely on my own, from start to finish, and the challenge wasn't one specific mechanic but the whole: I wanted a **complete game**, not a standalone demo. That meant it had a beginning and an end, played smoothly, and that all the systems (zombie AI, economy and shop) worked together instead of each one on its own.

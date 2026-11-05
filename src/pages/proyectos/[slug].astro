@@ -1,0 +1,27 @@
+---
+// PÁGINA TEMPORAL (paso 2): comprueba que el MDX se renderiza con Expressive Code.
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', ({ id, data }) => id.startsWith('es/') && !data.draft);
+  return projects.map((project) => ({
+    params: { slug: project.id.replace(/^es\//, '') },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{project.data.title}</title>
+  </head>
+  <body>
+    <h1>{project.data.title}</h1>
+    <Content />
+  </body>
+</html>

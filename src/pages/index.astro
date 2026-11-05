@@ -1,0 +1,24 @@
+---
+// PÁGINA TEMPORAL (paso 2): solo comprueba que la colección de proyectos
+// se carga y valida. Se sustituye por el diseño real en el paso 3-4.
+import { getCollection } from 'astro:content';
+
+const projects = (await getCollection('projects', ({ id, data }) => id.startsWith('es/') && !data.draft))
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Marta Prieto · Portfolio</title>
+  </head>
+  <body>
+    <h1>Marta Prieto</h1>
+    <ul>
+      {projects.map((p) => (
+        <li>{p.data.title} — {p.data.tech.join(', ')}</li>
+      ))}
+    </ul>
+  </body>
+</html>

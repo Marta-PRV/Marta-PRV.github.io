@@ -1,0 +1,63 @@
+---
+title: Zombie Survival FPS
+summary: Prototipo de shooter en primera persona en Unity con zombis que te persiguen, una economía de monedas y una tienda para sobrevivir más tiempo.
+category: videojuegos
+tech: [Unity, C#, Visual Studio]
+repo: https://github.com/Marta-PRV/fps-zombie-survival
+video: VqEWWKMhXMA
+order: 1
+---
+
+## Qué es
+
+Un shooter en primera persona ambientado en un mundo posapocalíptico. Tienes que resistir oleadas infinitas de zombis mientras gestionas recursos limitados: cada zombi caído suelta monedas, y con ellas compras vida, munición o un arma más potente.
+
+Lo hice como trabajo académico y fue mi primer **bucle jugable completo** en Unity, desde los enemigos hasta una tienda funcional.
+
+## Qué hice yo
+
+- **IA de los zombis**: detectan al jugador, lo persiguen y lo atacan.
+- **Economía aleatoria**: cada zombi suelta entre 0 y 5 monedas.
+- **Tienda**: lógica para comprar vida, munición y desbloquear un arma mejor.
+- **Mecánicas base**: vida, munición y recarga.
+- **Interfaz** básica para dar feedback al jugador.
+
+## Cómo piensan los zombis
+
+Para que el comportamiento fuera fácil de ampliar usé una **máquina de estados**: cada estado (patrulla, ataque...) es una clase con tres métodos, y la máquina solo se encarga de cambiar de uno a otro.
+
+```csharp title="StateMachine.cs" {6-18}
+public class StateMachine : MonoBehaviour
+{
+    public BaseState ActiveState { get; private set; }
+
+    public void ChangeState(BaseState newState)
+    {
+        if (ActiveState != null)
+        {
+            ActiveState.Exit();
+        }
+
+        ActiveState = newState;
+
+        if (ActiveState != null)
+        {
+            ActiveState.Enter();
+        }
+    }
+
+    private void Update()
+    {
+        if (ActiveState != null)
+        {
+            ActiveState.Perform();
+        }
+    }
+}
+```
+
+Añadir un comportamiento nuevo es crear otra clase que herede de `BaseState`, sin tocar el resto.
+
+## El reto
+
+Fue el primer juego que creé yo sola de principio a fin, y el reto no estaba en una mecánica concreta, sino en el conjunto: quería un **juego completo**, no una demo suelta. Eso significaba que tuviera su inicio y su final, que se jugara con fluidez y que todos los sistemas (la IA de los zombis, la economía y la tienda) funcionaran juntos y no cada uno por su lado.
