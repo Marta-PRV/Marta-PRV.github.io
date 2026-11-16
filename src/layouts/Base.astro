@@ -1,6 +1,6 @@
 ---
 // Plantilla base de todas las páginas: <head>, tema, fuentes, fondo, barra de
-// tareas y el hueco <main>. El SEO completo (Open Graph, JSON-LD) llega en el paso 6.
+// tareas y el hueco <main>, más todo el SEO: Open Graph, Twitter, hreflang y JSON-LD.
 // Pixelify Sans SOLO en peso 400: en 500/700 se rellenan los huecos de las letras
 // ("Contacto" se lee "Oontacto"). Nunca usar font-weight > 400 con --font-ui.
 import '@fontsource/pixelify-sans/latin-400.css';
@@ -15,21 +15,40 @@ import '../styles/desktop.css';
 import Hills from '../components/Hills.astro';
 import Taskbar from '../components/Taskbar.astro';
 import type { Lang } from '../i18n/ui';
-import { alternatePath, useTranslations } from '../i18n/utils';
+import { socials } from '../data/socials';
+import { alternatePath, localePath, useTranslations } from '../i18n/utils';
 
 interface Props {
   title?: string;
   description?: string;
   lang: Lang;
+  /** true en páginas que no deben indexarse (404). */
+  noindex?: boolean;
 }
 
-const { lang } = Astro.props;
+const { lang, noindex = false } = Astro.props;
 const t = useTranslations(lang);
 const title = Astro.props.title ?? t('site.title');
 const description = Astro.props.description ?? t('site.description');
 const other: Lang = lang === 'es' ? 'en' : 'es';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const alternate = new URL(alternatePath(Astro.url, other), Astro.site);
+const ogImage = new URL('/og/preview.png', Astro.site);
+const ogAlt = t('seo.imageAlt');
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '/en/';
+
+// Datos estructurados: quién es Marta (en todas las páginas, para que cualquiera pueda llegar desde un proyecto).
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Marta Prieto',
+  url: new URL(localePath(lang), Astro.site).href,
+  image: new URL('/og/preview.png', Astro.site).href,
+  jobTitle: t('seo.jobTitle'),
+  description: t('site.description'),
+  knowsAbout: ['Web development', 'Frontend', 'Artificial intelligence', 'Video games'],
+  sameAs: socials.map((s) => s.href),
+};
 ---
 
 <!doctype html>
@@ -42,6 +61,25 @@ const alternate = new URL(alternatePath(Astro.url, other), Astro.site);
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang={lang} href={canonical} />
     <link rel="alternate" hreflang={other} href={alternate} />
+    <link rel="alternate" hreflang="x-default" href={lang === 'es' ? canonical : alternate} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:type" content={isHome ? 'website' : 'article'} />
+    <meta property="og:site_name" content="Marta Prieto" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={lang === 'es' ? 'es_ES' : 'en_GB'} />
+    <meta property="og:locale:alternate" content={lang === 'es' ? 'en_GB' : 'es_ES'} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogAlt} />
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <!-- Pone el tema (claro/oscuro) ANTES de pintar, para evitar el parpadeo. -->

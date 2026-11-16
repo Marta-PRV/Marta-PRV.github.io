@@ -11,6 +11,8 @@ export const ui = {
     'site.title': 'Marta Prieto · Portfolio',
     'site.description':
       'Portfolio de Marta Prieto, ingeniera de software: desarrollo web, inteligencia artificial y videojuegos.',
+    'seo.imageAlt': 'Escritorio retro con la foto de Marta Prieto, su bloc de notas, sus redes y su contacto.',
+    'seo.jobTitle': 'Ingeniera de software',
     'nav.label': 'Navegación principal',
     'nav.start': 'Inicio',
     'nav.menu': 'Abrir menú de navegación',
@@ -89,6 +91,8 @@ export const ui = {
     'site.title': 'Marta Prieto · Portfolio',
     'site.description':
       'Portfolio of Marta Prieto, software engineer: web development, artificial intelligence and video games.',
+    'seo.imageAlt': 'Retro desktop showing Marta Prieto’s photo, her notepad, social links and contact details.',
+    'seo.jobTitle': 'Software engineer',
     'nav.label': 'Main navigation',
     'nav.start': 'Start',
     'nav.menu': 'Open navigation menu',
