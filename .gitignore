@@ -36,3 +36,5 @@ Thumbs.db
 # Capturas de revisión visual (Playwright MCP)
 .playwright-mcp/
 
+# Briefing original (solo local)
+docs/BRIEFING.md

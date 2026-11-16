@@ -33,7 +33,7 @@ JavaScript mínimo y sin librerías: solo un gestor de ventanas en vanilla TypeS
 - **Accesibilidad**: contraste AA en claro y oscuro, foco visible, objetivos táctiles de 44 px, `prefers-reduced-motion` respetado, auditoría con axe en los tests.
 - **Rendimiento**: imágenes optimizadas con `astro:assets` (WebP), fuentes autoalojadas con `font-display: swap` y precarga de las críticas, vídeo de YouTube con fachada (no se pide nada a YouTube hasta pulsar play).
 
-El sistema de diseño completo está en [DESIGN.md](DESIGN.md) y el briefing en [docs/BRIEFING.md](docs/BRIEFING.md).
+El sistema de diseño completo está en [DESIGN.md](DESIGN.md).
 
 ## Cómo ejecutarlo
 
