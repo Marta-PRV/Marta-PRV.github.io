@@ -7,7 +7,8 @@ import PageDesk from './PageDesk.astro';
 import Window from './Window.astro';
 import CdPlayer from './CdPlayer.astro';
 import TechIcon from './TechIcon.astro';
-import { tech } from '../data/tech';
+import WindowMenu from './WindowMenu.astro';
+import { findTech } from '../data/techProjects';
 import type { Lang } from '../i18n/ui';
 import { localePath, useTranslations } from '../i18n/utils';
 
@@ -25,9 +26,8 @@ const { Content } = await render(entry);
 // Si una tecnología está en src/data/tech.ts, su chip lleva el azulejo pixel; si no, solo el nombre.
 const chips = data.tech.map((name) => ({
   name,
-  known: tech.find((item) => item.name.toLowerCase() === name.toLowerCase()),
+  known: findTech(name),
 }));
-const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', 'View'];
 ---
 
 <PageDesk lang={lang} title={`${data.title} · Marta Prieto`} description={data.summary}>
@@ -43,14 +43,17 @@ const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', '
     draggable={false}
     flush
   >
-        <div slot="menu" class="menu">
-          <a class="menu__back" href={home}>{t('project.back')}</a>
-          <span class="menu__fake" aria-hidden="true">{menu.map((m) => <span>{m}</span>)}</span>
-        </div>
+        <WindowMenu slot="menu" win="proyecto" backHref={home} maximize={false} />
 
         <div class="body">
           <header class="head">
-            <p class="lead">{data.summary}</p>
+            <div class="lead">
+              <p>{data.summary}</p>
+              <p class="impact">
+                {data.clientReal && <span class="badge">{t('project.clientReal')}</span>}
+                <span class="visually-hidden">{t('project.impact')}: </span>{data.impact}
+              </p>
+            </div>
             <a class="btn" href={data.repo} target="_blank" rel="noopener noreferrer">
               {t('project.repo')} <span class="visually-hidden">{t('link.external')}</span>
             </a>
@@ -87,34 +90,6 @@ const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', '
 </PageDesk>
 
 <style>
-  .menu {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: var(--s-4);
-    padding: 0 var(--s-3);
-    min-height: 2.75rem;
-    font-size: var(--text-sm);
-    background: var(--window);
-    border-bottom: 1px solid var(--window-line);
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  .menu__back {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.75rem;
-    font-family: var(--font-ui);
-    color: var(--link);
-  }
-
-  .menu__fake {
-    display: flex;
-    gap: var(--s-4);
-    color: var(--window-muted);
-  }
-
   .body {
     display: grid;
     grid-template-columns: minmax(0, 1fr); /* sin esto, el contenido más ancho ensancha la columna y desborda en móvil */
@@ -135,6 +110,24 @@ const menu = lang === 'es' ? ['Archivo', 'Edición', 'Ver'] : ['File', 'Edit', '
     flex: 1 1 18rem;
     max-width: var(--measure);
     font-size: var(--text-lg);
+  }
+
+  .impact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+    margin-top: var(--s-3);
+    font-weight: 700;
+  }
+
+  .badge {
+    padding: 1px var(--s-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: #fff;
+    background: var(--select);
   }
 
   .chips {

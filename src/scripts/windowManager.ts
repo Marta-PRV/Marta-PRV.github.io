@@ -21,14 +21,15 @@
 // Deben coincidir con los criterios de src/styles/desktop.css
 const DESKTOP_QUERY = '(min-width: 76rem) and (min-height: 38rem)';
 /** Hay sitio libre para los extras (música y avisos) sin tapar ventanas importantes. */
-const ROOM_QUERY = '(min-width: 100rem) and (min-height: 42rem)';
+const ROOM_QUERY = '(min-width: 96rem) and (min-height: 52rem)';
 const STORE = 'desk:v1';
-const DEFAULT_FRONT = 'sobre-mi';
 const Z_BASE = 100;
 const KEEP_VISIBLE = 96; // px de la ventana que deben quedar siempre dentro del escritorio
 
 const mq = window.matchMedia(DESKTOP_QUERY);
 const room = window.matchMedia(ROOM_QUERY);
+/** Ventana delantera al entrar y al recolocar. */
+const DEFAULT_FRONT = 'sobre-mi';
 const root = document.documentElement;
 let zTop = Z_BASE;
 let drag: { win: HTMLElement; startX: number; startY: number; dx0: number; dy0: number; baseLeft: number; baseTop: number; width: number } | null = null;
@@ -41,8 +42,13 @@ const group = (prefix: string | undefined) => windows().filter((w) => prefix && 
 const isExtra = (w: HTMLElement) => w.hasAttribute('data-extra');
 const num = (v: string) => parseFloat(v) || 0;
 
-/** Estado inicial de una ventana: los extras solo empiezan abiertos si hay sitio libre. */
-const defaultState = (w: HTMLElement) => (isExtra(w) && !room.matches ? 'closed' : 'open');
+/** Ventanas que empiezan cerradas (data-start="closed", p. ej. "Mis proyectos"). */
+const startsClosed = (w: HTMLElement) => w.dataset.start === 'closed';
+/** Hay que forzar su visibilidad al abrirlas (el CSS las oculta mientras no se hayan abierto a propósito). */
+const needsShown = (w: HTMLElement) => isExtra(w) || startsClosed(w);
+
+/** Estado inicial: las de inicio cerrado, cerradas; los extras solo abiertos si hay sitio libre. */
+const defaultState = (w: HTMLElement) => (startsClosed(w) || (isExtra(w) && !room.matches) ? 'closed' : 'open');
 
 /* ───────────── Estado guardado ───────────── */
 
@@ -142,8 +148,8 @@ function focusWindow(win: HTMLElement) {
 /** Hace visible una ventana (abierta o restaurada) sin traerla al frente todavía. */
 function show(win: HTMLElement) {
   win.dataset.state = 'open';
-  // Los extras abiertos a propósito deben verse aunque el escritorio sea pequeño
-  if (isExtra(win)) win.setAttribute('data-shown', '');
+  // Los extras y las ventanas de inicio cerrado, abiertos a propósito, deben verse aunque el escritorio sea pequeño
+  if (needsShown(win)) win.setAttribute('data-shown', '');
 }
 
 function setState(win: HTMLElement, state: 'open' | 'min' | 'closed') {
@@ -313,7 +319,7 @@ function reset() {
     w.style.removeProperty('--dy');
     w.style.zIndex = '';
     w.dataset.state = defaultState(w);
-    if (isExtra(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
+    if (needsShown(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
     w.removeAttribute('data-max');
     w.removeAttribute('data-front');
     w.setAttribute('data-inactive', '');
@@ -345,7 +351,7 @@ function enable() {
     } else {
       w.dataset.state = defaultState(w); // los extras empiezan cerrados si no hay sitio libre
     }
-    if (isExtra(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
+    if (needsShown(w)) w.toggleAttribute('data-shown', w.dataset.state === 'open');
     w.setAttribute('data-inactive', '');
   }
   // Orden de apilado guardado (de atrás hacia delante)
@@ -464,13 +470,6 @@ document.addEventListener('click', (e) => {
       activateWindow(w);
     }
     return;
-  }
-
-  // "Proyectos" en la barra: lleva el foco a la columna de iconos
-  const link = target.closest<HTMLAnchorElement>('a[href$="#proyectos"]');
-  if (link) {
-    e.preventDefault();
-    document.querySelector<HTMLElement>('.icons .dicon')?.focus();
   }
 });
 

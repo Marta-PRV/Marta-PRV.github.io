@@ -3,6 +3,7 @@
 // Muchos reclutadores no tienen cliente de correo configurado, así que el
 // enlace mailto solo no basta: con "Copiar" siempre pueden llevarse la dirección.
 import Window from './Window.astro';
+import WindowMenu from './WindowMenu.astro';
 import { email, encodeEntities } from '../data/contact';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
 
@@ -17,6 +18,7 @@ const mailto = `<a class="btn" href="mailto:${address}">${t('contact.write')}</a
 ---
 
 <Window title={t('contact.title')} id="contacto" icon="mail" index={index}>
+  <WindowMenu slot="menu" win="contacto" edit={['copyEmail']} />
   <p>{t('contact.lead')}</p>
   <p class="address" set:html={address} />
   <div class="actions">

@@ -1,0 +1,309 @@
+---
+// Barra de menús de una ventana: Archivo / Edición / Ver / Ayuda. Solo hay opciones que
+// hacen algo (si una ventana no tiene nada que editar, no lleva "Edición").
+//  - Archivo: cerrar la ventana y (cuando existe el PDF, ver src/data/cv.ts) descargar el CV.
+//  - Edición: depende de la ventana (copiar el texto, copiar el email).
+//  - Ver: modo claro/oscuro, idioma y maximizar (esta última solo en PC).
+//  - Ayuda: "Cómo está hecho".
+// Teclado: Flechas, Inicio/Fin, Enter, Esc (cierra y devuelve el foco) y Tab (cierra).
+import { cvHref } from '../data/cv';
+import { languages, type Lang } from '../i18n/ui';
+import { alternatePath, getLangFromUrl, localePath, sectionSlug, useTranslations } from '../i18n/utils';
+
+interface Props {
+  /** Id de la ventana (da identificadores únicos a los menús). */
+  win: string;
+  /** Opciones de "Edición" de esta ventana. Sin ninguna, no hay menú Edición. */
+  edit?: ('copyAll' | 'selectAll' | 'copyEmail')[];
+  /** Quita "Maximizar" (ventanas de página, que no se maximizan). */
+  maximize?: boolean;
+  /** Enlace "← Escritorio" delante de los menús (páginas de proyecto). */
+  backHref?: string;
+}
+
+const { win, edit = [], maximize = true, backHref } = Astro.props;
+const lang: Lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const howHref = localePath(lang, sectionSlug(lang, 'como-esta-hecho'));
+const onHow = Astro.url.pathname === howHref;
+const editLabel = { copyAll: t('menu.copyAll'), selectAll: t('menu.selectAll'), copyEmail: t('menu.copyEmail') };
+
+const groups = [
+  { key: 'file', label: t('menu.file') },
+  ...(edit.length ? [{ key: 'edit', label: t('menu.edit') }] : []),
+  { key: 'view', label: t('menu.view') },
+  { key: 'help', label: t('menu.help') },
+];
+---
+
+<div class="wmenu" data-wmenu>
+  {backHref && <a class="wmenu__back" href={backHref}>{t('project.back')}</a>}
+  <div class="wmenu__bar" role="menubar" aria-label={t('menu.bar')}>
+    {
+      groups.map((g) => (
+        <div class="wmenu__group">
+          <button class="wmenu__top" type="button" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls={`${win}-m-${g.key}`}>
+            {g.label}
+          </button>
+          <ul class="wmenu__list" role="menu" id={`${win}-m-${g.key}`} aria-label={g.label} hidden>
+            {g.key === 'file' && (
+              <>
+                <li role="none">
+                  <button class="wmenu__item" type="button" role="menuitem" data-menu="close">{t('menu.closeWindow')}</button>
+                </li>
+                {cvHref && (
+                  <li role="none">
+                    <a class="wmenu__item" role="menuitem" href={cvHref} download>{t('menu.cv')}</a>
+                  </li>
+                )}
+              </>
+            )}
+            {g.key === 'edit' &&
+              edit.map((e) => (
+                <li role="none">
+                  <button class="wmenu__item" type="button" role="menuitem" data-menu={e}>{editLabel[e]}</button>
+                </li>
+              ))}
+            {g.key === 'view' && (
+              <>
+                <li role="none">
+                  <button
+                    class="wmenu__item"
+                    type="button"
+                    role="menuitem"
+                    data-theme-toggle
+                    data-to-light={t('theme.toLight')}
+                    data-to-dark={t('theme.toDark')}
+                    data-short-light={t('menu.theme.light')}
+                    data-short-dark={t('menu.theme.dark')}
+                  >
+                    <span class="theme-label">{t('menu.theme.dark')}</span>
+                  </button>
+                </li>
+                <li role="none">
+                  <a class="wmenu__item" role="menuitem" href={alternatePath(Astro.url, other)} hreflang={other} lang={other}>{languages[other]}</a>
+                </li>
+                {maximize && (
+                  <li role="none" class="wmenu__pc">
+                    <button class="wmenu__item" type="button" role="menuitem" data-menu="maximize">{t('window.maximize')} / {t('window.restore')}</button>
+                  </li>
+                )}
+              </>
+            )}
+            {g.key === 'help' && (
+              <li role="none">
+                <a class="wmenu__item" role="menuitem" href={howHref} aria-current={onHow ? 'page' : undefined}>{t('nav.how')}</a>
+              </li>
+            )}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .wmenu {
+    position: relative;
+    z-index: 20; /* los desplegables quedan por encima del cuerpo de la ventana */
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 0 var(--s-2);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--window-text);
+    background: var(--window);
+    border-bottom: 1px solid var(--window-line);
+  }
+
+  .wmenu__bar {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .wmenu__group {
+    position: relative;
+  }
+
+  .wmenu__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--s-2);
+    color: var(--link);
+  }
+
+  .wmenu__top,
+  .wmenu__item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 1.75rem;
+    padding: 0 var(--s-3);
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    text-decoration: none;
+    white-space: nowrap;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .wmenu__top:hover,
+  .wmenu__top[aria-expanded='true'],
+  .wmenu__item:hover,
+  .wmenu__item:focus-visible {
+    background: var(--select);
+    color: #fff;
+  }
+
+  .wmenu__list {
+    position: absolute;
+    inset: 100% auto auto 0;
+    min-width: 11rem;
+    margin: 0;
+    padding: 3px;
+    list-style: none;
+    color: var(--window-text);
+    background: var(--window);
+    border: 1px solid var(--window-edge);
+    box-shadow: var(--bevel-out);
+  }
+
+  .wmenu__list[hidden] {
+    display: none;
+  }
+
+  .wmenu__item[aria-current='page'] {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* "Maximizar" solo existe en el escritorio de PC con el gestor de ventanas activo (mismo criterio que desktop.css) */
+  .wmenu__pc {
+    display: none;
+  }
+
+  @media (min-width: 76rem) and (min-height: 38rem) {
+    :global(html.wm) .wmenu__pc {
+      display: list-item;
+    }
+  }
+
+  /* Táctil y modo apps: objetivos de al menos 44 px */
+  @media (pointer: coarse), (max-width: 75.99rem), (max-height: 37.99rem) {
+    .wmenu__top,
+    .wmenu__item {
+      min-height: 2.75rem;
+    }
+  }
+</style>
+
+<script>
+  const closeAll = (except?: Element | null) => {
+    document.querySelectorAll<HTMLButtonElement>('.wmenu__top[aria-expanded="true"]').forEach((b) => {
+      if (b === except) return;
+      b.setAttribute('aria-expanded', 'false');
+      const list = document.getElementById(b.getAttribute('aria-controls') ?? '');
+      if (list) list.hidden = true;
+    });
+  };
+
+  const listOf = (top: HTMLElement) => document.getElementById(top.getAttribute('aria-controls') ?? '');
+  const itemsOf = (list: HTMLElement | null) =>
+    Array.from(list?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter((i) => i.offsetParent !== null);
+
+  function open(top: HTMLElement, focusFirst: boolean) {
+    closeAll(top);
+    top.setAttribute('aria-expanded', 'true');
+    const list = listOf(top);
+    if (list) list.hidden = false;
+    if (focusFirst) itemsOf(list)[0]?.focus();
+  }
+
+  const tops = (bar: Element | null) => Array.from(bar?.querySelectorAll<HTMLElement>('.wmenu__top') ?? []);
+
+  function runAction(action: string, win: HTMLElement | null) {
+    if (!win) return;
+    const prose = win.querySelector<HTMLElement>('[data-copy-source]');
+    if (action === 'close') win.querySelector<HTMLElement>('[data-action="close"]')?.click();
+    else if (action === 'maximize') win.querySelector<HTMLElement>('[data-action="maximize"]')?.click();
+    else if (action === 'copyEmail') win.querySelector<HTMLElement>('[data-copy]')?.click();
+    else if (action === 'copyAll' && prose) void navigator.clipboard?.writeText(prose.innerText).catch(() => {});
+    else if (action === 'selectAll' && prose) {
+      const range = document.createRange();
+      range.selectNodeContents(prose);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const top = target.closest<HTMLElement>('.wmenu__top');
+    if (top) {
+      if (top.getAttribute('aria-expanded') === 'true') closeAll();
+      else open(top, e.detail === 0); // con teclado (detail 0) el foco pasa a la primera opción
+      return;
+    }
+    const item = target.closest<HTMLElement>('.wmenu__item');
+    if (item) {
+      const trigger = item.closest('.wmenu__group')?.querySelector<HTMLElement>('.wmenu__top');
+      const win = item.closest<HTMLElement>('.window');
+      closeAll();
+      if (item.dataset.menu) runAction(item.dataset.menu, win);
+      if (item.dataset.menu !== 'close') trigger?.focus();
+      return;
+    }
+    closeAll();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement;
+    const bar = target.closest('.wmenu__bar');
+    if (!bar) return;
+    const top = target.closest<HTMLElement>('.wmenu__top');
+    const list = target.closest<HTMLElement>('.wmenu__list');
+    const group = target.closest('.wmenu__group');
+    const trigger = group?.querySelector<HTMLElement>('.wmenu__top') ?? null;
+    const all = tops(bar);
+    const goTo = (offset: number) => {
+      if (!trigger) return;
+      const next = all[(all.indexOf(trigger) + offset + all.length) % all.length];
+      const wasOpen = !!list || trigger.getAttribute('aria-expanded') === 'true';
+      next.focus();
+      if (wasOpen) open(next, !!list);
+    };
+
+    if (e.key === 'Escape' && (list || top?.getAttribute('aria-expanded') === 'true')) {
+      e.preventDefault(); // que el gestor de ventanas no cierre la ventana con este mismo Esc
+      closeAll();
+      trigger?.focus();
+    } else if (e.key === 'Tab') {
+      closeAll();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goTo(1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goTo(-1);
+    } else if (top && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      open(top, false);
+      const items = itemsOf(listOf(top));
+      (e.key === 'ArrowDown' ? items[0] : items[items.length - 1])?.focus();
+    } else if (list && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+      e.preventDefault();
+      const items = itemsOf(list);
+      const i = items.indexOf(target);
+      const next =
+        e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[next]?.focus();
+    }
+  });
+</script>

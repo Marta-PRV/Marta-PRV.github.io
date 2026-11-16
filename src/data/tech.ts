@@ -18,6 +18,8 @@ export interface Tech {
   color: string;
   ink?: 'light' | 'dark';
   icon?: IconName;
+  /** Otros nombres con los que aparece en el campo `tech` de los proyectos (p. ej. MySQL cuenta como SQL). */
+  aliases?: string[];
 }
 
 export const tech: Tech[] = [
@@ -30,6 +32,6 @@ export const tech: Tech[] = [
   { id: 'node', name: 'Node.js', mark: 'ND', color: '#4a9a3a' },
   { id: 'express', name: 'Express', mark: 'EX', color: '#5a5f73' },
   { id: 'unity', name: 'Unity', mark: 'UN', color: '#3b3f4f' },
-  { id: 'sql', name: 'SQL', mark: 'SQL', color: '#d9822b', ink: 'dark' },
+  { id: 'sql', name: 'SQL', mark: 'SQL', color: '#d9822b', ink: 'dark', aliases: ['MySQL'] },
   { id: 'git', name: 'Git', mark: 'GIT', color: '#c0392b' },
 ];

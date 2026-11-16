@@ -13,20 +13,22 @@ interface Props {
   external?: boolean;
   /** Id de una ventana del escritorio: en PC el gestor la abre/trae al frente en vez de navegar. */
   open?: string;
+  /** Icono destacado (más grande y con un destello breve al entrar): para lo que debe encontrarse a la primera. */
+  featured?: boolean;
 }
 
-const { href, label, icon, external = false, open } = Astro.props;
+const { href, label, icon, external = false, open, featured = false } = Astro.props;
 const t = useTranslations(getLangFromUrl(Astro.url));
 ---
 
 <a
-  class="dicon"
+  class:list={['dicon', { 'dicon--featured': featured }]}
   href={href}
   target={external ? '_blank' : undefined}
   rel={external ? 'noopener noreferrer' : undefined}
   data-open={open}
 >
-  <span class="dicon__img"><Icon name={icon} size={48} /></span>
+  <span class="dicon__img"><Icon name={icon} size={featured ? 64 : 48} /></span>
   <span class="dicon__label">{label}</span>
   {external && <span class="visually-hidden">{t('link.external')}</span>}
 </a>
@@ -104,6 +106,45 @@ const t = useTranslations(getLangFromUrl(Astro.url));
 
     .dicon:hover:active .dicon__img {
       transform: translateY(0) scale(0.96);
+    }
+  }
+
+  /* ── Icono destacado ("Mis proyectos"): más grande, etiqueta resaltada y un destello al entrar ── */
+  .dicon--featured {
+    min-height: 6.5rem;
+  }
+
+  .dicon--featured .dicon__img {
+    position: relative;
+  }
+
+  .dicon--featured .dicon__label {
+    font-size: var(--text-ui);
+    background: var(--select);
+    color: #fff;
+  }
+
+  /* Aro que se expande y se desvanece: solo transform y opacity, y solo si el usuario no pidió reducir movimiento */
+  @media (prefers-reduced-motion: no-preference) {
+    .dicon--featured .dicon__img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid #fff;
+      opacity: 0;
+      animation: dicon-glint 1100ms var(--ease-out) 1.4s 3 both;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes dicon-glint {
+    from {
+      opacity: 0.9;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.55);
     }
   }
 

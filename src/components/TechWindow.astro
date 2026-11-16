@@ -1,9 +1,16 @@
 ---
-// Ventana "Mis tecnologías" (estilo "Mis programas"). La lista sale de
-// src/data/tech.ts: para añadir una tecnología no hay que tocar este archivo.
+// Ventana "Mis tecnologías" (estilo "Mis programas"). La lista sale de src/data/tech.ts y
+// los proyectos de cada tecnología se calculan solos desde el campo `tech` de los MDX
+// (src/data/techProjects.ts): para añadir una tecnología o un proyecto no hay que tocar este archivo.
+// Al pulsar una tecnología, el panel sustituye a la rejilla y muestra en qué proyectos se usó
+// (con "Volver"). Sin JS, los paneles salen todos debajo de la rejilla.
 import Window from './Window.astro';
+import WindowMenu from './WindowMenu.astro';
 import TechIcon from './TechIcon.astro';
+import Icon from './Icon.astro';
 import { tech } from '../data/tech';
+import { projectsByTech } from '../data/techProjects';
+import { getLangFromUrl, localePath, sectionSlug, useTranslations } from '../i18n/utils';
 
 interface Props {
   title: string;
@@ -11,19 +18,55 @@ interface Props {
 }
 
 const { title, index = 0 } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const byTech = await projectsByTech(lang);
+const projectHref = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}/${id.replace(`${lang}/`, '')}`);
 ---
 
 <Window title={title} id="tecnologias" icon="folder" index={index}>
-  <ul class="tech">
+  <WindowMenu slot="menu" win="tecnologias" />
+  <div class="techbox" data-techbox>
+    <ul class="tech" data-tech-grid>
+      {
+        tech.map((item) => (
+          <li>
+            <button class="tech__item" type="button" aria-expanded="false" aria-controls={`tp-${item.id}`} data-tech-btn={item.id}>
+              <span class="tech__tile"><TechIcon tech={item} size={32} /></span>
+              <span class="tech__name">{item.name}</span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
     {
       tech.map((item) => (
-        <li class="tech__item">
-          <span class="tech__tile"><TechIcon tech={item} size={32} /></span>
-          <span class="tech__name">{item.name}</span>
-        </li>
+        <section class="tpanel" id={`tp-${item.id}`} aria-labelledby={`tp-${item.id}-h`} data-tech-panel>
+          <header class="tpanel__head">
+            <span class="tech__tile"><TechIcon tech={item} size={32} /></span>
+            <h3 class="tpanel__title" id={`tp-${item.id}-h`}>{item.name}</h3>
+            <button class="btn tpanel__back" type="button" data-tech-back>{t('tech.close')}</button>
+          </header>
+          {byTech[item.id].length ? (
+            <>
+              <p class="tpanel__lead">{t('tech.usedIn')}</p>
+              <ul class="tpanel__list">
+                {byTech[item.id].map((p) => (
+                  <li>
+                    <a class="tpanel__link" href={projectHref(p.id)}>
+                      <Icon name={p.data.icon} size={24} /><span>{p.data.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p class="tpanel__lead">{t('tech.none')}</p>
+          )}
+        </section>
       ))
     }
-  </ul>
+  </div>
 </Window>
 
 <style>
@@ -41,9 +84,77 @@ const { title, index = 0 } = Astro.props;
     flex-direction: column;
     align-items: center;
     gap: var(--s-1);
+    width: 100%;
+    min-height: 2.75rem;
     padding: var(--s-1);
+    font: inherit;
+    color: inherit;
     text-align: center;
+    background: none;
+    border: 0;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Panel de "usada en": sustituye a la rejilla (con JS); sin JS aparecen todos debajo */
+  .tpanel {
+    margin-top: var(--s-4);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--window-line);
+  }
+
+  .tpanel__head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+
+  .tpanel__title {
+    flex: 1;
+    font-family: var(--font-ui);
+    font-size: var(--text-lg);
+    font-weight: 400;
+  }
+
+  .tpanel__lead {
+    margin: var(--s-3) 0 var(--s-2);
+    font-size: var(--text-sm);
+  }
+
+  .tpanel__list {
+    display: grid;
+    gap: var(--s-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tpanel__link {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 2.75rem;
+    padding: 0 var(--s-2);
+    font-family: var(--font-ui);
+    color: var(--link);
+  }
+
+  .tpanel__link:hover {
+    background: var(--select);
+    color: #fff;
+  }
+
+  @media (scripting: enabled) {
+    .techbox[data-detail] > .tech,
+    .tpanel:not([data-open]) {
+      display: none;
+    }
+
+    .tpanel {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
   }
 
   .tech__tile {
@@ -90,3 +201,37 @@ const { title, index = 0 } = Astro.props;
     }
   }
 </style>
+
+<script>
+  /* Abre el panel de una tecnología (sustituye a la rejilla) y lo cierra con "Volver" o Esc. */
+  function setPanel(box: HTMLElement, id: string | null, focus: 'panel' | 'button') {
+    box.querySelectorAll<HTMLElement>('[data-tech-panel]').forEach((p) => p.toggleAttribute('data-open', p.id === `tp-${id}`));
+    box.toggleAttribute('data-detail', id !== null);
+    box.querySelectorAll<HTMLElement>('[data-tech-btn]').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.techBtn === id)));
+    if (focus === 'panel' && id) box.querySelector<HTMLElement>(`#tp-${id} [data-tech-back]`)?.focus();
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const box = target.closest<HTMLElement>('[data-techbox]');
+    if (!box) return;
+    const btn = target.closest<HTMLElement>('[data-tech-btn]');
+    if (btn) {
+      setPanel(box, btn.dataset.techBtn ?? null, 'panel');
+      return;
+    }
+    if (target.closest('[data-tech-back]')) {
+      const id = box.querySelector<HTMLElement>('[data-tech-panel][data-open]')?.id.replace('tp-', '');
+      setPanel(box, null, 'button');
+      if (id) box.querySelector<HTMLElement>(`[data-tech-btn="${CSS.escape(id)}"]`)?.focus();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    const box = (e.target as Element).closest<HTMLElement>('[data-techbox]');
+    if (!box || !box.hasAttribute('data-detail')) return;
+    e.preventDefault(); // Esc solo cierra el panel, no la ventana
+    box.querySelector<HTMLElement>('[data-tech-back]')?.click();
+  });
+</script>

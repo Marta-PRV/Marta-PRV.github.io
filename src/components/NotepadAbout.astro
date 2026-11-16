@@ -1,9 +1,9 @@
 ---
-// "Sobre mí" dentro de un Bloc de notas. La barra de menús es decorativa.
+// "Sobre mí" dentro de un Bloc de notas, con menús funcionales (copiar el texto, tema, idioma…).
 // Se llama "Bloc de notas" / "Notepad" en sentido genérico: no usamos nombres de
 // programas ni marcas de Microsoft en la interfaz.
 import Window from './Window.astro';
-import { getLangFromUrl } from '../i18n/utils';
+import WindowMenu from './WindowMenu.astro';
 
 interface Props {
   title: string;
@@ -22,34 +22,18 @@ interface Props {
 }
 
 const { title, id, level = 'h2', closeHref, draggable = true, dialog = false, index = 0, class: className } = Astro.props;
-const menu = getLangFromUrl(Astro.url) === 'es' ? ['Archivo', 'Edición', 'Formato', 'Ver', 'Ayuda'] : ['File', 'Edit', 'Format', 'View', 'Help'];
 ---
 
 <Window title={title} id={id} icon="notepad" level={level} closeHref={closeHref} draggable={draggable} dialog={dialog} flush index={index} class={className}>
-  <div slot="menu" class="menu" aria-hidden="true">
-    {menu.map((item) => <span>{item}</span>)}
-  </div>
+  <WindowMenu slot="menu" win={id} edit={['copyAll', 'selectAll']} maximize={draggable} />
   <div class="paper">
-    <div class="prose">
+    <div class="prose" data-copy-source>
       <slot />
     </div>
   </div>
 </Window>
 
 <style>
-  .menu {
-    flex: none; /* si la ventana se limita en alto, el menú no debe encogerse ni recortarse */
-    display: flex;
-    gap: var(--s-4);
-    padding: var(--s-1) var(--s-3);
-    font-size: var(--text-sm);
-    color: var(--window-text);
-    background: var(--window);
-    border-bottom: 1px solid var(--window-line);
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
   .paper {
     padding: var(--s-4);
     color: var(--paper-text);

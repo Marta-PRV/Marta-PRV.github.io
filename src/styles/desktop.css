@@ -31,17 +31,17 @@ body {
   z-index: 10;
 }
 
-.hint {
-  display: none;
-}
-
 /* ───────────────────────── Modo PC ───────────────────────── */
 @media (min-width: 76rem) and (min-height: 38rem) {
   .desk {
     overflow: hidden;
-    /* Origen del collage (x de la foto). La columna de proyectos mide ~7rem; el conjunto de
-       ventanas importantes mide ~62.5rem y se centra en pantallas anchas. */
-    --ox: clamp(7rem, calc(50% - 31rem), 26rem);
+    /* Cuánto sobra de pantalla respecto al tamaño MÍNIMO del modo PC (76rem × 35.25rem de escritorio).
+       Cada ventana parte de su posición compacta (la que tiene en el mínimo, sin solapes) y se
+       desplaza una FRACCIÓN de este sobrante: así el collage se reparte por toda la pantalla,
+       también por abajo, y en el mínimo queda exactamente la composición compacta.
+       --sx solo se usa en `left` y --sy solo en `top`/`bottom` (los % dependen de la propiedad). */
+    --sx: calc(100% - 76rem);
+    --sy: calc(100% - 35.25rem);
   }
 
   .desk .window[data-draggable] {
@@ -76,15 +76,15 @@ body {
     transition: translate 250ms var(--ease-out);
   }
 
-  /* Iconos: proyectos en una columna a la izquierda (empieza más abajo para dejar sitio al
-     título a mano) y accesos en una columna a la derecha. Si no caben, pasan a otra columna. */
+  /* Iconos: la carpeta "Mis proyectos" a la izquierda y los accesos en una columna a la derecha.
+     Si no caben, pasan a otra columna. */
   .icons {
     position: absolute;
     z-index: 0;
   }
 
   .icons--left {
-    inset: 6rem auto 0.5rem 0.5rem;
+    inset: 0.5rem auto 0.5rem 0.5rem;
   }
 
   .icons--right {
@@ -108,122 +108,196 @@ body {
     display: none;
   }
 
-  /* ── Ventanas IMPORTANTES: colocación inicial sin solapes (salvo el solape deliberado foto/bloc) ──
-     Todo se mide desde --ox, así que escala con la pantalla. --tech-h es la altura de la ventana de
-     tecnologías (3 filas): si se añaden tecnologías hasta una 4ª fila, súbela. */
+  /* ── Collage con solapes naturales ──
+     Las ventanas se colocan en MONTONES que se mueven juntos (así los solapes se mantienen en cualquier
+     tamaño) y cada montón se reparte por la pantalla con una fracción del sobrante (--sx/--sy).
+     Dentro de un montón las posiciones son irregulares a propósito: unas montan sobre las esquinas o
+     bordes de otras, como si se hubieran abierto una tras otra (el z-index sigue ese orden: la última,
+     encima). Los solapes solo tapan márgenes o decoración, nunca títulos, textos ni botones.
+       Montón 1 (izquierda): foto, bloc sobre la foto, Mis redes sobre el borde inferior de la foto
+                             y los 3 avisos montados sobre el borde inferior del bloc.
+       Montón 2 (arriba a la derecha): tecnologías.
+       Montón 3 (abajo, centro-derecha): contacto con el reproductor sobre su esquina inferior derecha.
+     --tech-h es la altura de la ventana de tecnologías (3 filas): si crece a una 4ª fila, súbela. */
+  .desk {
+    --g1x: calc(7.5rem + var(--sx) * 0.12);
+    --g1y: calc(0.5rem + var(--sy) * 0.2);
+    --cx: calc(46.5rem + var(--sx) * 0.4);
+    --cy: calc(var(--tech-h) + 0.5rem + var(--sy) * 0.6);
+  }
+
   .desk .window[data-window='foto'] {
-    --x: var(--ox);
-    --y: 1rem;
+    --x: var(--g1x);
+    --y: var(--g1y);
     --w: var(--w-photo);
-    z-index: 6;
+    z-index: 10;
   }
 
-  /* Redes: justo debajo de la foto */
-  .desk .window[data-window='redes'] {
-    --x: var(--ox);
-    --y: 25rem;
-    --w: var(--w-redes);
-    z-index: 7;
-  }
-
-  /* El bloc cubre ~2.5rem de la foto, por debajo de la cara */
+  /* El bloc cubre ~2.5rem del borde derecho de la foto, por debajo de la cara */
   .desk .window[data-window='sobre-mi'] {
-    --x: calc(var(--ox) + 15rem);
-    --y: 5rem;
+    --x: calc(var(--g1x) + 15rem);
+    --y: calc(var(--g1y) + 3rem);
     --w: var(--w-notepad);
-    z-index: 9;
+    z-index: 11;
   }
 
+  /* Tecnologías: arriba a la derecha, sin pasar de la columna de accesos */
   .desk .window[data-window='tecnologias'] {
-    --x: calc(var(--ox) + 36.5rem);
-    --y: 1rem;
+    --x: calc(43.5rem + var(--sx) * 0.95);
+    --y: calc(1rem + var(--sy) * 0.03);
     --w: var(--w-tech);
-    z-index: 8;
+    z-index: 12;
   }
 
-  /* Contacto: debajo de tecnologías */
+  /* Contacto: bajo tecnologías en pantallas pequeñas (tapa solo su margen inferior); al crecer se aleja */
   .desk .window[data-window='contacto'] {
-    --x: calc(var(--ox) + 39.5rem);
-    --y: calc(1rem + var(--tech-h) + 1rem);
+    --x: var(--cx);
+    --y: var(--cy);
     --w: var(--w-contact);
-    z-index: 7;
+    z-index: 13;
   }
 
-  /* ── EXTRAS decorativos (música y avisos): a la derecha del conjunto (anclados a --ox, así nunca chocan
-     con tecnologías ni contacto) y siempre por debajo de las
-     ventanas importantes. Solo hay sitio cuando el escritorio es ancho y alto: si no, empiezan
-     cerrados y se abren desde la bandeja o el menú Inicio (ver windowManager.ts). ── */
+  /* Mis redes: monta sobre el borde inferior de la foto (solo tapa parte de la paleta de colores) */
+  .desk .window[data-window='redes'] {
+    --x: calc(var(--g1x) + 0.4rem);
+    --y: calc(var(--g1y) + 21rem);
+    --w: var(--w-redes);
+    z-index: 14;
+  }
+
+  /* Mis proyectos: NO se abre sola (data-start="closed"). Se abre desde la carpeta del escritorio,
+     el botón de la barra de tareas, el menú Inicio o el enlace de sobre_mi.txt. Al abrirla va
+     centrada y grande, para ver todos los proyectos sin scroll. */
+  .desk .window[data-window='proyectos'] {
+    --w: min(var(--w-projects), calc(100% - 16rem));
+    --x: calc(50% - var(--w) / 2);
+    top: 0.75rem;
+    bottom: 0.75rem;
+    height: fit-content;
+    margin-block: auto;
+    max-height: calc(100% - 1.5rem);
+    z-index: 20;
+  }
+
+  /* ── EXTRAS decorativos (música y avisos): solo hay sitio cuando el escritorio es ancho y alto; si no,
+     empiezan cerrados y se abren desde la bandeja o el menú Inicio (ver windowManager.ts). Montan sobre
+     bordes de ventanas importantes, así que van por encima (se abrieron "después"). ── */
   .desk .window[data-window='escuchando'] {
     --w: var(--w-player);
-    --x: calc(var(--ox) + 63rem);
-    top: auto;
-    bottom: 1rem;
+    --x: calc(var(--cx) + 16.5rem);
+    --y: calc(var(--cy) + 9rem);
     max-height: none;
-    z-index: 5;
+    z-index: 15;
   }
 
+  /* Los 3 avisos: cascada montada sobre el borde inferior del bloc (la primera tapa ~1.5rem del margen del bloc) */
   .desk .window[data-window^='aviso-'] {
     --w: var(--w-alert);
+    --gx: calc(var(--g1x) + 18rem);
+    --gy: calc(var(--g1y) + 25.9rem);
     max-height: none;
   }
 
   .desk .window[data-window='aviso-info'] {
-    --x: calc(var(--ox) + 63rem);
-    --y: 9rem;
-    z-index: 2;
+    --x: var(--gx);
+    --y: var(--gy);
+    z-index: 16;
   }
 
   .desk .window[data-window='aviso-error'] {
-    --x: calc(var(--ox) + 64.5rem);
-    --y: 11.5rem;
-    z-index: 3;
+    --x: calc(var(--gx) + 1.5rem);
+    --y: calc(var(--gy) + 2.5rem);
+    z-index: 17;
   }
 
   .desk .window[data-window='aviso-warning'] {
-    --x: calc(var(--ox) + 66rem);
-    --y: 14rem;
-    z-index: 4;
+    --x: calc(var(--gx) + 3rem);
+    --y: calc(var(--gy) + 5rem);
+    z-index: 18;
   }
 
-  /* Sin JS (o antes de que arranque), en pantallas sin sitio libre los extras no se ven */
-  @media (max-width: 99.99rem), (max-height: 41.99rem) {
+  /* Sin extras (pantallas sin sitio libre para el reproductor y los avisos): los montones bajan más hacia
+     el centro para no dejar hueco abajo. */
+  @media (max-width: 95.99rem), (max-height: 51.99rem) {
+    .desk {
+      --g1y: calc(0.5rem + var(--sy) * 0.5);
+      --cy: calc(var(--tech-h) + 0.5rem + var(--sy) * 0.85);
+    }
+
+    .desk .window[data-window='tecnologias'] {
+      --y: calc(1rem + var(--sy) * 0.1);
+    }
+  }
+
+  /* ── COMPOSICIÓN DE REFERENCIA (la que eligió Marta en su pantalla de 1920×1080: escritorio de ~119,8 × 56,3rem) ──
+     Se usa siempre que hay sitio para los extras (mismo criterio que ROOM_QUERY en windowManager.ts).
+     Foto con el bloc montado en su borde, Mis redes abajo a la izquierda, Contacto bajo el bloc, Tecnologías
+     a la derecha con el reproductor sobre su esquina inferior derecha, y los avisos arriba a la derecha.
+     Cada posición = (valor en 96rem × 49.25rem, el mínimo con extras) + pendiente × sobrante (--tx/--ty),
+     calculada para que en el tamaño de referencia salga EXACTAMENTE la captura y en el mínimo siga sin tapar
+     nada importante. Los pares de pendientes están elegidos para que las separaciones nunca se cierren. */
+  @media (min-width: 96rem) and (min-height: 52rem) {
+    .desk {
+      --tx: calc(100% - 96rem);
+      --ty: calc(100% - 49.25rem);
+      --g1x: calc(8.5rem + var(--tx) * 0.557);
+      --g1y: calc(1rem + var(--ty) * 0.184);
+    }
+
+    .desk .window[data-window='sobre-mi'] {
+      --x: calc(var(--g1x) + 15.5rem + var(--tx) * 0.036);
+      --y: calc(var(--g1y) + 3.25rem);
+    }
+
+    .desk .window[data-window='redes'] {
+      --x: calc(8rem + var(--tx) * 0.2);
+      --y: calc(31rem + var(--ty) * 0.71);
+    }
+
+    /* Contacto: bajo el bloc; nunca más abajo del borde inferior del escritorio */
+    .desk .window[data-window='contacto'] {
+      --x: calc(27rem + var(--tx) * 0.164);
+      --y: min(calc(30.6rem + var(--ty) * 1.376), calc(100% - 14.5rem));
+    }
+
+    .desk .window[data-window='tecnologias'] {
+      --x: calc(49.2rem + var(--tx) * 0.6);
+      --y: calc(22.5rem + var(--ty) * 0.6);
+    }
+
+    /* Reproductor: sobre la esquina inferior derecha de Tecnologías (donde su 4ª columna está vacía) */
+    .desk .window[data-window='escuchando'] {
+      --x: calc(49.2rem + var(--tx) * 0.6 + 21.2rem);
+      --y: calc(22.5rem + var(--ty) * 0.6 + 13.6rem);
+    }
+
+    /* Avisos: cascada arriba a la derecha, anclada al borde derecho (nunca toca el icono "Cómo está hecho") */
+    .desk .window[data-window^='aviso-'] {
+      --gx: calc(100% - 32rem);
+      --gy: calc(0.5rem + var(--ty) * 0.434);
+    }
+
+    .desk .window[data-window='aviso-error'] {
+      --x: calc(var(--gx) + 2.25rem);
+      --y: calc(var(--gy) + 3.4rem);
+    }
+
+    .desk .window[data-window='aviso-warning'] {
+      --x: calc(var(--gx) + 4.5rem);
+      --y: calc(var(--gy) + 6.8rem);
+    }
+  }
+
+  /* Sin JS (o antes de que arranque): en pantallas sin sitio libre los extras no se ven */
+  @media (max-width: 95.99rem), (max-height: 51.99rem) {
     .desk .window[data-extra][data-state='open']:not([data-shown]) {
       display: none;
     }
   }
 
-  /* Decoración: título a mano con flecha hacia los proyectos, y pegatinas (sin clics, debajo de las ventanas) */
-  .hint {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.75rem;
-    z-index: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
-    max-width: calc(var(--ox) - 1rem);
-    rotate: -3deg;
-    pointer-events: none;
-  }
-
-  .hint :global(.hint__arrow) {
-    margin-inline-start: 1.25rem;
-  }
-
-  .sticker--pc {
-    left: calc(var(--ox) + 15.5rem);
-    bottom: 0.5rem;
-  }
-
-  .sticker--cd {
-    left: calc(var(--ox) + 22rem);
-    bottom: 0.75rem;
-  }
-
-  .sticker--floppy {
-    left: calc(var(--ox) + 29rem);
-    bottom: 0.75rem;
+  /* Ventanas que empiezan cerradas: sin JS solo se ven si se llega a ellas por su #ancla */
+  .desk .window[data-start='closed'][data-state='open']:not([data-shown]):not(:target) {
+    display: none;
   }
 
   /* Barra de título = asa de arrastre (solo con el gestor activo) */
@@ -279,8 +353,6 @@ body {
     gap: var(--s-2) 0;
   }
 
-  .hint,
-  .sticker,
   .icons--right {
     display: none;
   }

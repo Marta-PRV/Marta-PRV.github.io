@@ -1,17 +1,16 @@
 ---
 // Barra de tareas fija abajo (gris con bisel, estilo Windows 98) = navegación del sitio.
 //
-//  [Inicio] | [Sobre mí][Foto][Tecnologías][Contacto][Mis redes] | ……… | [Recolocar][♪][⚠] | [EN][tema] reloj
+//  [Inicio] | [Proyectos][Sobre mí][Foto][Tecnologías][Contacto][Mis redes] | ……… | [Recolocar][♪][⚠] | [EN][tema] reloj
 //
 //  - Inicio: menú con la API nativa `popover` (Esc, clic fuera y foco los gestiona el
-//    navegador), con submenús (Proyectos, Extras). Cada opción de ventana abre la ventana si
+//    navegador), con submenú (Extras). Cada opción de ventana abre la ventana si
 //    está cerrada, o la trae al frente (restaurándola si estaba minimizada).
 //  - Botones fijos: siempre los mismos. Cerrada -> la abre; detrás -> al frente; delante -> la minimiza.
 //    Son enlaces #id: sin JS no hacen nada raro y en móvil abren la "app". El gestor
 //    (windowManager.ts) les pone el estado visual y `aria-pressed`.
 //  - Extras decorativos (música, avisos) como iconos pequeños en la bandeja: abren y cierran.
 //  - En modo apps (móvil) solo hay Inicio y la bandeja compacta.
-import { getCollection } from 'astro:content';
 import Icon from './Icon.astro';
 import { languages, type Lang } from '../i18n/ui';
 import { alternatePath, localePath, sectionSlug, useTranslations } from '../i18n/utils';
@@ -27,20 +26,16 @@ const home = localePath(lang);
 const howHref = localePath(lang, sectionSlug(lang, 'como-esta-hecho'));
 const onHow = Astro.url.pathname === howHref;
 
-const projects = (await getCollection('projects', ({ id, data }) => id.startsWith(`${lang}/`) && !data.draft)).sort(
-  (a, b) => a.data.order - b.data.order,
-);
-const projectHref = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}/${id.replace(`${lang}/`, '')}`);
-
 // Ventanas que tienen botón fijo en la barra de tareas (y opción en Inicio salvo Foto y Tecnologías)
 const fixed = [
+  { id: 'proyectos', icon: 'folder' as const, label: t('projects.short') },
   { id: 'sobre-mi', icon: 'notepad' as const, label: t('nav.about') },
   { id: 'foto', icon: 'paint' as const, label: t('photo.short') },
   { id: 'tecnologias', icon: 'folder' as const, label: t('tech.short') },
   { id: 'contacto', icon: 'mail' as const, label: t('nav.contact') },
   { id: 'redes', icon: 'globe' as const, label: t('redes.title') },
 ];
-const inStart = fixed.filter((w) => ['sobre-mi', 'contacto', 'redes'].includes(w.id));
+const inStart = fixed.filter((w) => ['proyectos', 'sobre-mi', 'contacto', 'redes'].includes(w.id));
 ---
 
 <nav class="taskbar" aria-label={t('nav.label')}>
@@ -51,22 +46,6 @@ const inStart = fixed.filter((w) => ['sobre-mi', 'contacto', 'redes'].includes(w
 
   <div id="start-menu" class="start-menu" popover>
     <ul class="menu">
-      <li>
-        <button class="menu__item" type="button" aria-expanded="false" aria-controls="sub-projects">
-          <Icon name="folder" size={24} /><span>{t('menu.projects')}</span><span class="menu__arrow" aria-hidden="true"></span>
-        </button>
-        <ul class="submenu" id="sub-projects" hidden>
-          {
-            projects.map((p) => (
-              <li>
-                <a class="menu__item" href={projectHref(p.id)}>
-                  <Icon name={p.data.icon} size={24} /><span>{p.data.iconLabel ?? p.data.title}</span>
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </li>
       {
         inStart.map((w) => (
           <li>
@@ -263,7 +242,7 @@ const inStart = fixed.filter((w) => ['sobre-mi', 'contacto', 'redes'].includes(w
     align-items: center;
     gap: var(--s-3);
     width: 100%;
-    min-height: 2.5rem;
+    min-height: 2.75rem;
     padding: var(--s-1) var(--s-4) var(--s-1) var(--s-2);
     font-family: var(--font-ui);
     font-size: var(--text-lg);
@@ -435,6 +414,22 @@ const inStart = fixed.filter((w) => ['sobre-mi', 'contacto', 'redes'].includes(w
   }
 
   /* ───────── Modo apps (móvil): el submenú se despliega en vertical, dentro del menú ───────── */
+  @media (max-width: 75.99rem), (max-height: 37.99rem), (pointer: coarse) {
+    /* Táctil: la barra no tiene relleno para que sus botones midan los 44 px completos */
+    .taskbar {
+      padding-block: 0;
+    }
+
+    .start,
+    .tray__btn {
+      min-height: 2.75rem;
+    }
+
+    .tray__btn {
+      min-width: 2.75rem;
+    }
+  }
+
   @media (max-width: 75.99rem), (max-height: 37.99rem) {
     .submenu {
       position: static;

@@ -29,6 +29,8 @@ interface Props {
   dialog?: boolean;
   /** Ventana decorativa (música, avisos): empieza cerrada si no hay sitio libre en el escritorio. */
   extra?: boolean;
+  /** Empieza cerrada en PC: solo se abre desde su icono, botón de la barra o Inicio (p. ej. "Mis proyectos"). */
+  startClosed?: boolean;
   /** Posición en la cascada de apertura (cada paso añade ~70 ms de retraso). */
   index?: number;
   class?: string;
@@ -45,6 +47,7 @@ const {
   draggable = true,
   dialog = false,
   extra = false,
+  startClosed = false,
   index = 0,
   class: className,
 } = Astro.props;
@@ -62,6 +65,7 @@ const t = useTranslations(getLangFromUrl(Astro.url));
   aria-modal={dialog ? 'true' : undefined}
   data-draggable={draggable ? '' : undefined}
   data-extra={extra ? '' : undefined}
+  data-start={startClosed ? 'closed' : undefined}
   style={`--i:${index}`}
 >
   <div class="window__bar" data-drag>
@@ -77,6 +81,7 @@ const t = useTranslations(getLangFromUrl(Astro.url));
       </button>
       <a class="ctl ctl--close" data-action="close" href={closeHref ?? '#'} aria-label={t('window.close')}>
         <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.6" /></svg>
+        <span class="ctl__label" aria-hidden="true">{t('window.close')}</span>
       </a>
     </span>
     )}
@@ -174,6 +179,11 @@ const t = useTranslations(getLangFromUrl(Astro.url));
     margin-inline-start: 2px;
   }
 
+  /* La palabra "Cerrar" solo se ve en modo apps (móvil), donde el botón es grande */
+  .ctl__label {
+    display: none;
+  }
+
   /* Las ventanas de página (no arrastrables) solo tienen el botón de cerrar */
   .window:not([data-draggable]) .ctl:not(.ctl--close) {
     display: none;
@@ -202,6 +212,45 @@ const t = useTranslations(getLangFromUrl(Astro.url));
 
   .window__body--flush {
     padding: 0;
+  }
+
+  /* Modo apps (móvil y pantallas pequeñas): el botón de cerrar/volver es siempre visible y de al menos 44 px.
+     Mismo criterio que desktop.css. En pantallas táctiles grandes (PC con dedo) también crecen los controles. */
+  @media (max-width: 75.99rem), (max-height: 37.99rem) {
+    .window__bar {
+      min-height: 2.75rem;
+    }
+
+    .ctl--close {
+      grid-auto-flow: column;
+      gap: var(--s-2);
+      width: auto;
+      min-width: 2.75rem;
+      height: 2.75rem;
+      padding-inline: var(--s-3);
+      font-family: var(--font-ui);
+      font-size: var(--text-sm);
+    }
+
+    .ctl--close::after {
+      inset: 0;
+    }
+
+    .ctl--close .ctl__label {
+      display: inline;
+    }
+
+    .ctl--close :global(svg) {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .ctl {
+      min-width: 2.75rem;
+      height: 2.75rem;
+    }
   }
 
   /* En pantallas estrechas solo queda el botón de cerrar: más sitio para el título */

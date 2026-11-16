@@ -27,6 +27,10 @@ const projects = defineCollection({
       icon: z.enum(iconNames),
       /** Nombre corto bajo el icono del escritorio (máx. ~12 caracteres). Si falta, se usa el título. */
       iconLabel: z.string().max(14).optional(),
+      /** Frase de impacto: qué se consiguió (máx. ~160 caracteres). Se ve en "Mis proyectos" y en la página del proyecto. */
+      impact: z.string().max(180),
+      /** true = proyecto para un cliente real: se muestra la etiqueta "Cliente real". */
+      clientReal: z.boolean().default(false),
       /** Tecnologías y herramientas, en el orden en que quieres mostrarlas. */
       tech: z.array(z.string()).min(1),
       /** URL del repositorio en GitHub. */
