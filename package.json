@@ -9,7 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "playwright test",
+    "og": "node scripts/og-image.mjs",
+    "favicon": "node scripts/favicon.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.7",
