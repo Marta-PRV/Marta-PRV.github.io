@@ -8,6 +8,8 @@ import '@fontsource/atkinson-hyperlegible-next/latin-400.css';
 import '@fontsource/atkinson-hyperlegible-next/latin-400-italic.css';
 import '@fontsource/atkinson-hyperlegible-next/latin-700.css';
 import '@fontsource/permanent-marker/latin-400.css';
+import pixelifyFont from '@fontsource/pixelify-sans/files/pixelify-sans-latin-400-normal.woff2?url';
+import atkinsonFont from '@fontsource/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-400-normal.woff2?url';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/desktop.css';
@@ -81,6 +83,10 @@ const person = {
     <meta name="twitter:image:alt" content={ogAlt} />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <!-- Las dos fuentes que se ven al entrar: se piden ya, sin esperar al CSS. -->
+    <link rel="preload" href={pixelifyFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={atkinsonFont} as="font" type="font/woff2" crossorigin />
     <meta name="generator" content={Astro.generator} />
     <!-- Pone el tema (claro/oscuro) ANTES de pintar, para evitar el parpadeo. -->
     <script is:inline>
