@@ -50,13 +50,23 @@ const chips = data.tech.map((name) => ({
             <div class="lead">
               <p>{data.summary}</p>
               <p class="impact">
+                {data.tfg && <span class="badge">{t('project.tfg')}</span>}
                 {data.clientReal && <span class="badge">{t('project.clientReal')}</span>}
                 <span class="visually-hidden">{t('project.impact')}: </span>{data.impact}
               </p>
             </div>
-            <a class="btn" href={data.repo} target="_blank" rel="noopener noreferrer">
-              {t('project.repo')} <span class="visually-hidden">{t('link.external')}</span>
-            </a>
+            <div class="actions">
+              <a class="btn" href={data.repo} target="_blank" rel="noopener noreferrer">
+                {t('project.repo')} <span class="visually-hidden">{t('link.external')}</span>
+              </a>
+              {
+                data.memoria && (
+                  <a class="btn" href={data.memoria} target="_blank" rel="noopener noreferrer" data-memoir>
+                    {t('project.memoir')} <span class="visually-hidden">{t('link.external')}</span>
+                  </a>
+                )
+              }
+            </div>
           </header>
 
           <section aria-label={t('project.tech')}>
@@ -104,6 +114,12 @@ const chips = data.tech.map((name) => ({
     align-items: center;
     justify-content: space-between;
     gap: var(--s-3) var(--s-5);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
   }
 
   .lead {

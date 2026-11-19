@@ -39,6 +39,7 @@ const href = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}
           <div class="file__text">
             <h3 class="file__name">
               <a class="file__link" href={href(p.id)}>{p.data.title}</a>
+              {p.data.tfg && <span class="badge">{t('project.tfg')}</span>}
               {p.data.clientReal && <span class="badge">{t('project.clientReal')}</span>}
             </h3>
             <p class="file__sum">{p.data.summary}</p>

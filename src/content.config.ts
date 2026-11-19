@@ -31,6 +31,10 @@ const projects = defineCollection({
       impact: z.string().max(180),
       /** true = proyecto para un cliente real: se muestra la etiqueta "Cliente real". */
       clientReal: z.boolean().default(false),
+      /** true = es mi Trabajo de Fin de Grado: se muestra la etiqueta "TFG". */
+      tfg: z.boolean().default(false),
+      /** URL del PDF de la memoria (TFG). Si existe, la página del proyecto muestra el botón "Leer memoria (PDF)". */
+      memoria: z.string().url().optional(),
       /** Tecnologías y herramientas, en el orden en que quieres mostrarlas. */
       tech: z.array(z.string()).min(1),
       /** URL del repositorio en GitHub. */
