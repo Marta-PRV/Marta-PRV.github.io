@@ -7,6 +7,8 @@ const pages = [
   '/',
   '/en/',
   '/proyectos/carnets-universidad/',
+  '/proyectos/healthsimvr/',
+  '/en/projects/healthsimvr/',
   '/en/projects/carnets-universidad/',
   '/como-esta-hecho/',
   '/404.html',

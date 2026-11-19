@@ -75,7 +75,7 @@ test('el menú Inicio abre "Mis proyectos" y lista los proyectos', async ({ page
   await page.locator('#start-menu [data-open="proyectos"]').click();
   const proyectos = win(page, 'proyectos');
   await expect(proyectos).toBeVisible();
-  await expect(proyectos.locator('.file__link')).toHaveCount(3);
+  await expect(proyectos.locator('.file__link')).toHaveCount(4);
 });
 
 test('la carpeta del escritorio abre "Mis proyectos"', async ({ page }) => {
@@ -88,7 +88,7 @@ test('proyecto: URL propia, enlace al repo y Esc vuelve al escritorio', async ({
   await win(page, 'proyectos').locator('.file__link').first().click();
   await expect(page).toHaveURL(/\/proyectos\/[a-z0-9-]+\/$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const repo = page.locator('.window--page a.btn[href^="https://github.com/"]');
+  const repo = page.locator('.window--page a.btn[href^="https://github.com/"]:not([data-memoir])');
   await expect(repo).toHaveAttribute('target', '_blank');
   await expect(repo).toHaveAttribute('rel', /noopener/);
   await page.keyboard.press('Escape');
@@ -103,7 +103,36 @@ test('todos los proyectos enlazan a un repositorio de GitHub', async ({ page }) 
   expect(hrefs.length).toBeGreaterThan(0);
   for (const href of hrefs) {
     await page.goto(href);
-    await expect(page.locator('.window--page a.btn[href^="https://github.com/"]')).toHaveCount(1);
+    await expect(page.locator('.window--page a.btn[href^="https://github.com/"]:not([data-memoir])')).toHaveCount(1);
+  }
+});
+
+test('HealthSimVR va el primero, con etiqueta TFG y botón de memoria en PDF', async ({ page }) => {
+  await page.locator('.dicon[data-open="proyectos"]').click();
+  const primero = win(page, 'proyectos').locator('.file').first();
+  await expect(primero.locator('.file__link')).toContainText('HealthSimVR');
+  await expect(primero.locator('.badge')).toHaveText('TFG');
+  await primero.locator('.file__link').click();
+  await expect(page).toHaveURL(/\/proyectos\/healthsimvr\/$/);
+  const memoria = page.locator('.window--page a[data-memoir]');
+  await expect(memoria).toHaveText(/Leer memoria \(PDF\)/);
+  await expect(memoria).toHaveAttribute('href', /HealthSimVR\/blob\/main\/docs\/.+\.pdf$/);
+  await expect(memoria).toHaveAttribute('target', '_blank');
+});
+
+test('las tecnologías enlazan con los proyectos donde se usaron', async ({ page }) => {
+  const casos: [string, string][] = [
+    ['openxr', 'HealthSimVR'],
+    ['unity', 'HealthSimVR'],
+    ['pytorch', 'ArtPrompt'],
+    ['nextjs', 'Carnets'],
+    ['tailwind', 'Carnets'],
+    ['mongodb', 'Carnets'],
+  ];
+  for (const [id, proyecto] of casos) {
+    await win(page, 'tecnologias').locator(`[data-tech-btn="${id}"]`).click();
+    await expect(page.locator(`#tp-${id} .tpanel__link`).filter({ hasText: proyecto })).toBeVisible();
+    await page.locator(`#tp-${id} [data-tech-back]`).click();
   }
 });
 

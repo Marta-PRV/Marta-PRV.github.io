@@ -5,6 +5,8 @@ const pages: [string, 'es' | 'en'][] = [
   ['/', 'es'],
   ['/en/', 'en'],
   ['/proyectos/carnets-universidad/', 'es'],
+  ['/proyectos/healthsimvr/', 'es'],
+  ['/en/projects/healthsimvr/', 'en'],
   ['/en/projects/carnets-universidad/', 'en'],
 ];
 

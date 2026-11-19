@@ -188,4 +188,15 @@ const href = (id: string) => localePath(lang, `${sectionSlug(lang, 'proyectos')}
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Pantallas bajas (portátil mínimo 1216×608): filas más compactas para que quepan 4 proyectos sin scroll */
+  @media (min-width: 76rem) and (max-height: 40rem) {
+    .file {
+      padding-block: var(--s-1);
+    }
+
+    .file__tech {
+      -webkit-line-clamp: 1;
+    }
+  }
 </style>
