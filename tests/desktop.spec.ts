@@ -1,8 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Escritorio: ventanas, barra de tareas, menú Inicio, Esc, idioma y tema.
 
 const win = (page: Page, id: string) => page.locator(`.desk .window[data-window="${id}"]`);
+
+// Espera a que acaben las animaciones finitas de una ventana (entrada): si no, su caja se mide a medio mover.
+const animationsDone = (loc: Locator) =>
+  loc.evaluate((el) =>
+    Promise.all(el.getAnimations().filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime)).map((a) => a.finished)),
+  );
 
 const overflowX = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -27,6 +33,7 @@ test('con espacio, los extras (música y avisos) empiezan abiertos', async ({ pa
 });
 
 test('se puede arrastrar una ventana por su barra de título', async ({ page }) => {
+  await animationsDone(win(page, 'foto'));
   const before = (await win(page, 'foto').boundingBox())!;
   const b = (await win(page, 'foto').locator('.window__bar').boundingBox())!;
   await page.mouse.move(b.x + 80, b.y + b.height / 2);
@@ -38,6 +45,7 @@ test('se puede arrastrar una ventana por su barra de título', async ({ page }) 
   expect(Math.abs(after.y - before.y)).toBeGreaterThan(60);
   // la posición se recuerda al recargar (sessionStorage)
   await page.reload();
+  await animationsDone(win(page, 'foto'));
   const again = (await win(page, 'foto').boundingBox())!;
   expect(Math.abs(again.x - after.x)).toBeLessThan(2);
 });
@@ -91,6 +99,7 @@ test('proyecto: URL propia, enlace al repo y Esc vuelve al escritorio', async ({
   const repo = page.locator('.window--page a.btn[href^="https://github.com/"]:not([data-memoir])');
   await expect(repo).toHaveAttribute('target', '_blank');
   await expect(repo).toHaveAttribute('rel', /noopener/);
+  await expect(page.locator('html.wm')).toHaveCount(1); // el gestor de ventanas (script diferido) ya escucha el teclado
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL(/:4321\/$/);
 });
