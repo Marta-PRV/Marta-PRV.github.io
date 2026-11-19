@@ -33,5 +33,16 @@ export const tech: Tech[] = [
   { id: 'express', name: 'Express', mark: 'EX', color: '#5a5f73' },
   { id: 'unity', name: 'Unity', mark: 'UN', color: '#3b3f4f' },
   { id: 'sql', name: 'SQL', mark: 'SQL', color: '#d9822b', ink: 'dark', aliases: ['MySQL'] },
+  { id: 'nextjs', name: 'Next.js', mark: 'NX', color: '#2a2d3e' },
+  { id: 'tailwind', name: 'Tailwind CSS', mark: 'TW', color: '#2aa6b8', ink: 'dark' },
+  { id: 'mongodb', name: 'MongoDB', mark: 'MDB', color: '#2f8f4e' },
+  { id: 'pytorch', name: 'PyTorch', mark: 'PT', color: '#d9502a' },
+  {
+    id: 'openxr',
+    name: 'VR / OpenXR',
+    mark: 'XR',
+    color: '#b83a8a',
+    aliases: ['OpenXR', 'XR Interaction Toolkit', 'XR Hands', 'Meta Quest 2'],
+  },
   { id: 'git', name: 'Git', mark: 'GIT', color: '#c0392b' },
 ];
